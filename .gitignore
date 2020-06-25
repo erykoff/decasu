@@ -1,0 +1,11 @@
+*~
+*.pyc
+*.o
+*.so
+build
+dist
+decasu.egg-info
+.DS_Store
+*.fits
+.ipynb_checkpoints
+pytest_session.txt
