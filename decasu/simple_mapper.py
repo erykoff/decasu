@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import healpy as hp
 import fitsio
@@ -75,7 +74,7 @@ class SimpleMapper(object):
 
         self.wcs_list = []
         self.centers = np.zeros(self.table.size, dtype=[('ra_center', 'f8'),
-                                                   ('dec_center', 'f8')])
+                                                        ('dec_center', 'f8')])
         for i in range(self.table.size):
             wcs = esutil.wcsutil.WCS(self.table[i])
             self.wcs_list.append(wcs)
