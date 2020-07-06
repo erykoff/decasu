@@ -89,6 +89,8 @@ class WcsTableBuilder(object):
                                                 self.table['naxis1'][row], self.table['naxis1'][row]]),
                                       np.array([0.0, self.table['naxis2'][row],
                                                 self.table['naxis2'][row], 0.0]))
+        center = wcs.image2sky([self.table['naxis1'][row]/2.],
+                               [self.table['naxis2'][row]/2.])
         vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
         try:
             pixels = hp.query_polygon(self.config.nside_run, vertices, nest=True, inclusive=True, fact=16)
@@ -97,4 +99,4 @@ class WcsTableBuilder(object):
             pixels = np.array([], dtype=np.int64)
             wcs = None
 
-        return wcs, pixels
+        return wcs, pixels, center
