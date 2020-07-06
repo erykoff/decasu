@@ -56,7 +56,7 @@ class MultiMapper(object):
         print('Generating WCSs...')
         t = time.time()
         pool = Pool(processes=self.ncores)
-        wcs_list, pixel_list = zip(*pool.map(wcs_builder, range(wcs_builder.nrows)))
+        wcs_list, pixel_list, center_list = zip(*pool.map(wcs_builder, range(wcs_builder.nrows), chunksize=1))
         pool.close()
         pool.join()
         print('Time elapsed: ', time.time() - t)
@@ -82,6 +82,8 @@ class MultiMapper(object):
         for ind in u:
             i1a = rev[rev[ind]: rev[ind + 1]]
             wcs_inds = np.searchsorted(pixel_indices, i1a, side='left')
+            miss, = np.where(pixel_indices[wcs_inds] != i1a)
+            wcs_inds[miss] -= 1
 
             # This could probably be more efficient
             for band in wcs_builder.bands:
