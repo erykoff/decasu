@@ -7,6 +7,11 @@ from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
 from . import decasu_globals
 
 
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OMP_NUM_THREADS'] = '1'
+
+
 class HealpixMapper(object):
     """
     Map a single healpix pixel
