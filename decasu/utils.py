@@ -1,3 +1,7 @@
+import esutil
+import fitsio
+import numpy as np
+
 
 OP_NONE = 0
 OP_SUM = 1
@@ -69,3 +73,31 @@ def op_str_to_code(op_str):
         op_code = OP_OR
 
     return op_code
+
+
+def read_maskfiles(expnums, maskfiles):
+    """
+    Read a list of mask files, cutting to the specific expnums.
+
+    Parameters
+    ----------
+    expnums : `np.ndarray`
+       Exposure numbers to keep
+    maskfiles : `list` [`str`]
+       Mask files to read
+
+    Returns
+    -------
+    masktable : `np.ndarray`
+       Mask table
+    """
+    masktable = None
+    for maskfile in maskfiles:
+        subtable = fitsio.read(maskfile, ext=1, lower=True, trim_strings=True)
+        a, b = esutil.numpy_util.match(expnums, subtable['expnum'])
+        if masktable is None:
+            masktable = subtable[b]
+        else:
+            masktable = np.append(masktable, subtable[b])
+
+    return masktable

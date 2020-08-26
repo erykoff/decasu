@@ -3,8 +3,9 @@
 import argparse
 import decasu
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Make survey property maps for DECam')
+    parser = argparse.ArgumentParser(description='Make survey property maps for DECam using healpix regions')
 
     parser.add_argument('-c', '--configfile', action='store', type=str, required=True,
                         help='YAML config file')
@@ -38,9 +39,9 @@ if __name__ == '__main__':
         pixels = [int(p) for p in args.pixels.split(',')]
 
     if args.simple:
-        mapper = decasu.SimpleMapper(config)
+        mapper = decasu.SimpleHealpixMapper(config)
         mapper(args.infile, 'blah.hs', bands[0])
     else:
-        mapper = decasu.MultiMapper(config, args.outputpath, ncores=args.ncores)
+        mapper = decasu.MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
         mapper(args.infile, bands=bands, pixels=pixels,
                clear_intermediate_files=not args.keep_intermediate_files)

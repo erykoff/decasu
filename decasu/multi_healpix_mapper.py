@@ -7,12 +7,13 @@ import glob
 
 from .wcs_table import WcsTableBuilder
 from .healpix_mapper import HealpixMapper
+from .region_mapper import RegionMapper
 from .healpix_consolidator import HealpixConsolidator
 from .utils import op_str_to_code
 from . import decasu_globals
 
 
-class MultiMapper(object):
+class MultiHealpixMapper(object):
     """
     Map a combination of bands/pixels
 
@@ -44,14 +45,14 @@ class MultiMapper(object):
         bands : `list`, optional
            List of bands to run.  If blank, run all.
         pixels : `list`, optional
-           List of pixels to run (nside=`config.nside_run`.
+           List of pixels to run (nside=`config.nside_run`).
            If blank, run all.
         clear_intermediate_files : `bool`, optional
            Clear intermediate files when done?
         """
         # First build the wcs's
         print('Reading input table...')
-        wcs_builder = WcsTableBuilder(self.config, infile, bands)
+        wcs_builder = WcsTableBuilder(self.config, [infile], bands)
 
         print('Generating WCSs...')
         t = time.time()
@@ -94,14 +95,17 @@ class MultiMapper(object):
                     wcsindex_list.append(wcs_inds[ok])
 
         # Generate maps
-        hpix_mapper = HealpixMapper(self.config, self.outputpath)
+        # hpix_mapper = HealpixMapper(self.config, self.outputpath)
+        region_mapper = RegionMapper(self.config, self.outputpath, 'pixel',
+                                     self.config.nside_coverage)
 
         values = zip(runpix_list, wcsindex_list)
 
         print('Generating maps for %d pixels...' % (len(runpix_list)))
         t = time.time()
         pool = Pool(processes=self.ncores)
-        pool.starmap(hpix_mapper, values, chunksize=1)
+        # pool.starmap(hpix_mapper, values, chunksize=1)
+        pool.starmap(region_mapper, values, chunksize=1)
         pool.close()
         pool.join()
         print('Time elapsed: ', time.time() - t)
@@ -132,14 +136,6 @@ class MultiMapper(object):
                                                              fname_template)))
                     fname_list.append(fname)
                     mapfiles_list.append(mapfiles)
-
-                    # Concatenate files
-                    # healsparse.cat_healsparse_files(mapfiles, fname)
-
-                    # Clean up if necessary
-                    # if clear_intermediate_files:
-                    #     for f in mapfiles:
-                    #         os.unlink(f)
 
         hpix_consolidator = HealpixConsolidator(self.config, clear_intermediate_files)
 

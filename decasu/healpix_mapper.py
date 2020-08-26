@@ -21,35 +21,52 @@ class HealpixMapper(object):
     config : `Configuration`
        decasu configuration object
     """
-    def __init__(self, config, outputpath):
+    def __init__(self, config, outputpath, tilemode=False):
         self.config = config
         self.outputpath = outputpath
+        self.tilemode = tilemode
 
-    def __call__(self, hpix, indices):
+    def __call__(self, hpix_or_tilename, indices):
         """
         Run all the configured maps for a given hpix (nside self.config.nside_run).
 
         Parameters
         ----------
-        hpix : `int`
-           Healpix to run
+        hpix_or_tilename : `int` or `str
+           Healpix or tilename to run
         indices : `np.ndarray`
-           Indices of table/wcs_list in the given healpix
+           Indices of table/wcs_list in the given healpix/tile
         """
         self.table = decasu_globals.table
         self.wcs_list = decasu_globals.wcs_list
+        self.tile_info = decasu_globals.tile_info
+        self.streak_table = decasu_globals.streak_table
+        self.bleed_table = decasu_globals.bleed_table
+        self.satstar_table = decasu_globals.satstar_table
 
-        print("Computing maps for pixel %d with %d inputs" % (hpix, len(indices)))
+        if self.tilemode:
+            tilename = hpix_or_tilename
+            print("Computing maps for tile %s with %d inputs" % (tilename, len(indices)))
 
-        # Create the path for the files if necessary
-        os.makedirs(os.path.join(self.outputpath,
-                                 self.config.healpix_relpath(hpix)),
-                    exist_ok=True)
+            # Create the path for the files if necessary
+            os.makedirs(os.path.join(self.outputpath,
+                                     self.config.tile_relpath(tilename)),
+                        exist_ok=True)
 
-        bit_shift = 2*int(np.round(np.log2(self.config.nside / self.config.nside_run)))
-        npixels = 2**bit_shift
-        pixel_min = hpix*npixels
-        pixel_max = (hpix + 1)*npixels - 1
+            # NEED TO FIGURE OUT NPIXELS
+        else:
+            hpix = hpix_or_tilename
+            print("Computing maps for pixel %d with %d inputs" % (hpix, len(indices)))
+
+            # Create the path for the files if necessary
+            os.makedirs(os.path.join(self.outputpath,
+                                     self.config.healpix_relpath(hpix)),
+                        exist_ok=True)
+
+            bit_shift = 2*int(np.round(np.log2(self.config.nside / self.config.nside_run)))
+            npixels = 2**bit_shift
+            pixel_min = hpix*npixels
+            pixel_max = (hpix + 1)*npixels - 1
 
         # Figure out how many maps we need to make and initialize memory
         map_values_list = []
@@ -71,12 +88,20 @@ class HealpixMapper(object):
                 op_code = op_str_to_code(operation)
 
                 # Check to see if file already exists
-                fname = os.path.join(self.outputpath,
-                                     self.config.healpix_relpath(hpix),
-                                     self.config.healpix_map_filename(self.table['band'][indices[0]],
-                                                                      hpix,
-                                                                      map_type,
-                                                                      op_code))
+                if self.tilemode:
+                    fname = os.path.join(self.outputpath,
+                                         self.config.tile_relpath(tilename),
+                                         self.config.tile_map_filename(self.table['band'][indices[0]],
+                                                                       tile,
+                                                                       map_type,
+                                                                       op_code))
+                else:
+                    fname = os.path.join(self.outputpath,
+                                         self.config.healpix_relpath(hpix),
+                                         self.config.healpix_map_filename(self.table['band'][indices[0]],
+                                                                          hpix,
+                                                                          map_type,
+                                                                          op_code))
                 if os.path.isfile(fname):
                     op_code = OP_NONE
 
@@ -111,6 +136,7 @@ class HealpixMapper(object):
 
         # Render and compute
         for ind in indices:
+            print(ind)
             wcs = self.wcs_list[ind]
 
             if wcs is None:

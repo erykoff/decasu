@@ -14,54 +14,69 @@ class WcsTableBuilder(object):
     ----------
     config : `Configuration`
        decasu configuration object
-    infile : `str`
-       Name of input file with wcs information
+    infiles : `list` [`str`]
+       List of input files with wcs information
     bands : `list`
        Bands to run.  Empty list means use all.
+    compute_pixels : `bool`, optional
+       Compute pixels when rendering WCS?
     """
-    def __init__(self, config, infile, bands):
+    def __init__(self, config, infiles, bands, pfw_attempt_ids=[], compute_pixels=True):
         self.config = config
+        self.compute_pixels = compute_pixels
 
-        table_in = fitsio.read(infile, ext=1, lower=True, trim_strings=True)
+        fulltable = None
 
-        # Add any extra fields...
-        dtype = table_in.dtype.descr
-        added_fields = []
-        for extra_field in self.config.extra_fields:
-            if extra_field not in table_in.dtype.names:
-                dtype.extend([(extra_field, 'U%d' % (len(self.config.extra_fields[extra_field]) + 1))])
-                added_fields.append(extra_field)
+        for infile in infiles:
+            table_in = fitsio.read(infile, ext=1, lower=True, trim_strings=True)
 
-        if len(added_fields) == 0:
-            table = table_in
-        else:
-            table = np.zeros(table_in.size, dtype=dtype)
-            for name in table_in.dtype.names:
-                table[name][:] = np.nan_to_num(table_in[name])
-            for field in added_fields:
-                table[field][:] = self.config.extra_fields[field]
+            if len(pfw_attempt_ids) > 0:
+                a, b = esutil.numpy_util.match(pfw_attempt_ids, table_in['pfw_attempt_id'])
+                table_in = table_in[b]
 
-        if len(bands) == 0:
-            # Use them all, record the bands here
-            self.bands = np.unique(table['band'])
-        else:
-            self.bands = bands
+            # Add any extra fields...
+            dtype = table_in.dtype.descr
+            added_fields = []
+            for extra_field in self.config.extra_fields:
+                if extra_field not in table_in.dtype.names:
+                    dtype.extend([(extra_field, 'U%d' % (len(self.config.extra_fields[extra_field]) + 1))])
+                    added_fields.append(extra_field)
 
-            use = None
-            for b in bands:
-                if use is None:
-                    use = (table['band'] == b)
-                else:
-                    use |= (table['band'] == b)
-            table = table[use]
+            if len(added_fields) == 0:
+                table = table_in
+            else:
+                table = np.zeros(table_in.size, dtype=dtype)
+                for name in table_in.dtype.names:
+                    table[name][:] = np.nan_to_num(table_in[name])
+                for field in added_fields:
+                    table[field][:] = self.config.extra_fields[field]
 
-        if self.config.zp_sign_swap:
-            table[self.config.magzp_field] *= -1.0
+            if len(bands) == 0:
+                # Use them all, record the bands here
+                self.bands = np.unique(table['band'])
+            else:
+                self.bands = bands
 
-        print('Found %d CCDs for %d bands.' % (len(table), len(bands)))
+                use = None
+                for b in bands:
+                    if use is None:
+                        use = (table['band'] == b)
+                    else:
+                        use |= (table['band'] == b)
+                table = table[use]
 
-        decasu_globals.table = table
-        self.nrows = len(table)
+            if self.config.zp_sign_swap:
+                table[self.config.magzp_field] *= -1.0
+
+            if fulltable is None:
+                fulltable = table
+            else:
+                fulltable = np.append(fulltable, table)
+
+        print('Found %d CCDs for %d bands.' % (len(fulltable), len(bands)))
+
+        decasu_globals.table = fulltable
+        self.nrows = len(fulltable)
 
     def __call__(self, row):
         """
@@ -91,12 +106,16 @@ class WcsTableBuilder(object):
                                                 self.table['naxis2'][row], 0.0]))
         center = wcs.image2sky([self.table['naxis1'][row]/2.],
                                [self.table['naxis2'][row]/2.])
-        vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
-        try:
-            pixels = hp.query_polygon(self.config.nside_run, vertices, nest=True, inclusive=True, fact=16)
-        except RuntimeError:
-            # Bad WCS
-            pixels = np.array([], dtype=np.int64)
-            wcs = None
 
-        return wcs, pixels, center
+        if self.compute_pixels:
+            vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
+            try:
+                pixels = hp.query_polygon(self.config.nside_run, vertices, nest=True, inclusive=True, fact=16)
+            except RuntimeError:
+                # Bad WCS
+                pixels = np.array([], dtype=np.int64)
+                wcs = None
+
+            return wcs, pixels, center
+        else:
+            return wcs, center

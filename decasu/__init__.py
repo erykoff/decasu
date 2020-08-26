@@ -1,7 +1,10 @@
 from ._version import __version__
 
 from .configuration import Configuration
-from .simple_mapper import SimpleMapper
-from .multi_mapper import MultiMapper
+from .simple_healpix_mapper import SimpleHealpixMapper
+from .multi_healpix_mapper import MultiHealpixMapper
 from .wcs_table import WcsTableBuilder
 from .healpix_mapper import HealpixMapper
+from .multi_tile_mapper import MultiTileMapper
+from .region_mapper import RegionMapper
+
