@@ -41,6 +41,9 @@ class Configuration(object):
     zp_sign_swap: bool = False
     magzp_field: str = 'mag_zero'
     bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
+    latitude: float = -30.1690
+    longitude: float = -70.8063
+    elevation: float = 2200.0
 
     def __post_init__(self):
         self._validate()

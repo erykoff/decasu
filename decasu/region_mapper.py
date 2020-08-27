@@ -3,6 +3,11 @@ import numpy as np
 import healsparse
 import healpy as hp
 
+import astropy.units as units
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+import coord
+
 from .utils import op_str_to_code
 from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
 from . import decasu_globals
@@ -60,6 +65,10 @@ class RegionMapper(object):
 
         self.band = self.table['band'][indices[0]]
 
+        loc = EarthLocation(lat=self.config.latitude*units.degree,
+                            lon=self.config.longitude*units.degree,
+                            height=self.config.elevation*units.m)
+
         if self.tilemode:
             tilename = hpix_or_tilename
             print("Computing maps for tile %s with %d inputs" % (tilename, len(indices)))
@@ -112,8 +121,12 @@ class RegionMapper(object):
         map_values_list = []
         map_operation_list = []
         map_fname_list = []
+        has_zenith_quantity = False
 
         for map_type in self.config.map_types.keys():
+            if map_type == 'airmass' or map_type.startswith('dcr') or map_type == 'parallactic':
+                has_zenith_quantity = True
+
             if map_type in ['nexp']:
                 map_dtype = np.int32
             elif map_type in ['coverage']:
@@ -205,6 +218,11 @@ class RegionMapper(object):
                                             np.full(use_b.size, pixel_weights_b)))
             nexp[use] += 1
 
+            if has_zenith_quantity:
+                zenith, par_angle = self._compute_zenith_and_par_angles(loc, self.table['mjd_obs'][ind],
+                                                                        np.median(vpix_ra[use]),
+                                                                        np.median(vpix_dec[use]))
+
             for i, map_type in enumerate(self.config.map_types.keys()):
                 if map_type == 'nexp':
                     value = 1
@@ -213,6 +231,18 @@ class RegionMapper(object):
                     value = 0.0
                 elif map_type == 'coverage':
                     continue
+                elif map_type == 'airmass':
+                    value = self._compute_airmass(zenith)
+                elif map_type == 'dcr_dra':
+                    value = np.tan(zenith)*np.sin(par_angle)
+                elif map_type == 'dcr_ddec':
+                    value = np.tan(zenith)*np.cos(par_angle)
+                elif map_type == 'dcr_e1':
+                    value = (np.tan(zenith)**2.)*np.cos(2*par_angle)
+                elif map_type == 'dcr_e2':
+                    value = (np.tan(zenith)**2.)*np.sin(2*par_angle)
+                elif map_type == 'parallactic':
+                    value = par_angle
                 else:
                     value = self.table[map_type][ind]
 
@@ -387,8 +417,15 @@ class RegionMapper(object):
                 for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
                     pixra, pixdec = hp.pix2ang(self.config.nside, pixels, lonlat=True, nest=True)
                     if self.tile_info['crossra0'][tind] == 'Y':
-                        # Special for cross-ra0
-                        raise NotImplementedError("Fix this!")
+                        # Special for cross-ra0, where uramin will be very large
+                        uramin = self.tile_info['uramin'][tind] - 360.0
+                        pixra_rot = pixra.copy()
+                        hi, = np.where(pixra > 180.0)
+                        pixra_rot[hi] -= 360.0
+                        ok = ((pixra_rot > uramin) &
+                              (pixra_rot < self.tile_info['uramax'][tind]) &
+                              (pixdec > self.tile_info['udecmin'][tind]) &
+                              (pixdec <= self.tile_info['udecmax'][tind]))
                     else:
                         ok = ((pixra > self.tile_info['uramin'][tind]) &
                               (pixra <= self.tile_info['uramax'][tind]) &
@@ -443,6 +480,64 @@ class RegionMapper(object):
                                   self.config.maglim_aperture/(2.*self.config.arcsec_per_pix)) -
                      2.5*np.log10(1./np.sqrt(weights)))
         return maglimits
+
+    def _compute_zenith_and_par_angles(self, loc, mjd, ra, dec):
+        """
+        Compute the zenith angle for a given ra/dec
+
+        Parameters
+        ----------
+        loc : `astropy.coordinates.EarthLocation`
+        mjd : `float`
+        ra : `float`
+           RA in degrees
+        dec : `float`
+           Dec in degrees
+
+        Returns
+        -------
+        zenith_angle : `float`
+           Zenith angle in radians.
+        parallactic_angle : `float`, optional
+           Parallactic angle in radians.
+        """
+        t = Time(mjd, format='mjd', location=loc)
+        lst = t.sidereal_time('apparent')
+        ha = lst - ra*units.degree
+
+        c_ra = ra*coord.degrees
+        c_dec = dec*coord.degrees
+        c_ha = ha.to_value(units.degree)*coord.degrees
+        c_lat = self.config.latitude*coord.degrees
+        c_zenith = coord.CelestialCoord(c_ha + c_ra, c_lat)
+        c_pointing = coord.CelestialCoord(c_ra, c_dec)
+        zenith_angle = c_pointing.distanceTo(c_zenith).rad
+
+        c_NCP = coord.CelestialCoord(0.0*coord.degrees, 90.0*coord.degrees)
+        parallactic_angle = c_pointing.angleBetween(c_NCP, c_zenith).rad
+
+        return zenith_angle, parallactic_angle
+
+    def _compute_airmass(self, zenith):
+        """
+        Compute the airmass for a list of zenith angles.
+        Computed using simple expansion formula.
+
+        Parameters
+        ----------
+        zenith : `np.ndarray`
+           Zenith angle(s), radians
+
+        Returns
+        -------
+        airmass : `np.ndarray`
+        """
+        secz = 1./np.cos(zenith)
+        airmass = (secz -
+                   0.0018167*(secz - 1.0) -
+                   0.002875*(secz - 1.0)**2.0 -
+                   0.0008083*(secz - 1.0)**3.0)
+        return airmass
 
     def _get_maskpoly_from_row(self, table_row):
         """
