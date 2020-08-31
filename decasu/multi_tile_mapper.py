@@ -37,7 +37,8 @@ class MultiTileMapper(object):
 
     def __call__(self, coaddtilefile, imagefiles, band,
                  coaddtiles=[], bleedtrailfiles=[], streakfiles=[],
-                 starfiles=[], clear_intermediate_files=True):
+                 starfiles=[], clear_intermediate_files=True,
+                 clobber=False):
         """
         Compute maps for a combination of tiles
 
@@ -57,6 +58,8 @@ class MultiTileMapper(object):
            List of streak region files.
         starfiles : `list` [`str`], optional
            list of saturated star region files.
+        clobber : `bool`, optional
+           Clobber any existing files
         clear_intermediate_files : `bool`, optional
            Clear intermediate files when done?
         """
@@ -67,8 +70,8 @@ class MultiTileMapper(object):
 
         decasu_globals.tile_info = tile_info
 
+        pfw_attempt_ids = []
         if len(coaddtiles) > 0:
-            pfw_attempt_ids = []
             tile_info_names = list(tile_info['tilename'])
             for coaddtile in coaddtiles:
                 try:
@@ -83,6 +86,58 @@ class MultiTileMapper(object):
         wcs_builder = WcsTableBuilder(self.config, imagefiles, [band],
                                       pfw_attempt_ids=pfw_attempt_ids,
                                       compute_pixels=False)
+
+        # Find the unique tiles in the decasu_globals.table
+        # Check if any of these have the complete set of output files.
+        # If so, remove them from decasu_globals.table
+        if not clobber:
+            tilenames, table_indices = np.unique(decasu_globals.table['tilename'],
+                                                 return_index=True)
+            complete_tile_indices = []
+            for i, tilename in enumerate(tilenames):
+                tilepath = os.path.join(self.outputpath,
+                                        self.config.tile_relpath(tilename))
+                if not os.path.isdir(tilepath):
+                    # Nothing to see here, move along
+                    continue
+                input_map_filename = os.path.join(tilepath,
+                                                  self.config.tile_input_filename(band,
+                                                                                  tilename))
+                if not os.path.isfile(input_map_filename):
+                    continue
+
+                found = False
+                for map_type in self.config.map_types.keys():
+                    if found:
+                        continue
+                    for j, operation in enumerate(self.config.map_types[map_type]):
+                        if found:
+                            continue
+                        op_code = op_str_to_code(operation)
+                        fname = os.path.join(tilepath,
+                                             self.config.tile_map_filename(band,
+                                                                           tilename,
+                                                                           map_type,
+                                                                           op_code))
+                        if not os.path.isfile(fname):
+                            found = True
+                            continue
+
+                if not found:
+                    complete_tile_indices.append(i)
+
+            # Now we need to remove all of these from the list
+            if len(complete_tile_indices) > 0:
+                print('Not computing %d tiles already completed.' % (len(complete_tile_indices)))
+                complete_tile_indices = np.array(complete_tile_indices)
+                comp_ids = decasu_globals.table['pfw_attempt_id'][table_indices[complete_tile_indices]]
+                aa, bb = esutil.numpy_util.match(comp_ids,
+                                                 decasu_globals.table['pfw_attempt_id'])
+                decasu_globals.table = np.delete(decasu_globals.table, bb)
+
+        if len(decasu_globals.table) == 0:
+            print('No tiles to run.  Exiting...')
+            return
 
         print('Generating WCSs...')
         t = time.time()
@@ -124,16 +179,14 @@ class MultiTileMapper(object):
         region_mapper = RegionMapper(self.config, self.outputpath, 'tile',
                                      nside_coverage_tile)
 
-        values = zip(runtile_list, wcsindex_list)
+        values = zip(runtile_list, wcsindex_list, [clobber]*len(runtile_list))
 
         print('Generating maps for %d tiles...' % (len(runtile_list)))
         t = time.time()
-        # pool = Pool(processes=self.ncores)
-        # pool.starmap(tile_mapper, values, chunksize=1)
-        for a, b in values:
-            region_mapper(a, b)
-        # pool.close()
-        # pool.join()
+        pool = Pool(processes=self.ncores)
+        pool.starmap(region_mapper, values, chunksize=1)
+        pool.close()
+        pool.join()
         print('Time elapsed: ', time.time() - t)
 
         # Consolidate

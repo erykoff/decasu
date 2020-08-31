@@ -24,10 +24,12 @@ if __name__ == '__main__':
                         help='Output path')
     parser.add_argument('-T', '--coaddtiles', action='store', type=str, required=False,
                         help='Coadd tiles to run, comma delimited')
-    parser.add_argument('-k', '--keep_intermediate_files', action='store_true',
+    parser.add_argument('-K', '--keep_intermediate_files', action='store_true',
                         required=False, help='Keep intermediate files')
     parser.add_argument('-n', '--ncores', action='store', type=int, required=False,
                         default=1, help='Number of cores to run on.')
+    parser.add_argument('-k', '--clobber', action='store_true', required=False,
+                        help='Clobber any existing files.')
 
     args = parser.parse_args()
 
@@ -60,4 +62,5 @@ if __name__ == '__main__':
     mapper = decasu.MultiTileMapper(config, args.outputpath, ncores=args.ncores)
     mapper(args.coaddtilefile, imagefiles, band, coaddtiles=coaddtiles,
            bleedtrailfiles=bleedtrailfiles, streakfiles=streakfiles,
-           starfiles=starfiles, clear_intermediate_files=not args.keep_intermediate_files)
+           starfiles=starfiles, clear_intermediate_files=not args.keep_intermediate_files,
+           clobber=args.clobber)

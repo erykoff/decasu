@@ -3,9 +3,6 @@ import numpy as np
 import healsparse
 import healpy as hp
 
-import astropy.units as units
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 import coord
 
 from .utils import op_str_to_code
@@ -45,7 +42,7 @@ class RegionMapper(object):
         else:
             raise ValueError("mode must be 'tile' or 'pixel'")
 
-    def __call__(self, hpix_or_tilename, indices):
+    def __call__(self, hpix_or_tilename, indices, clobber=False):
         """
         Run all the configured maps for a given hpix (nside self.config.nside_run).
 
@@ -55,6 +52,8 @@ class RegionMapper(object):
            Healpix or tilename to run
         indices : `np.ndarray`
            Indices of table/wcs_list in the given healpix/tile
+        clobber : `bool`, optional
+           Clobber any existing files.
         """
         self.table = decasu_globals.table
         self.wcs_list = decasu_globals.wcs_list
@@ -64,10 +63,6 @@ class RegionMapper(object):
         self.satstar_table = decasu_globals.satstar_table
 
         self.band = self.table['band'][indices[0]]
-
-        loc = EarthLocation(lat=self.config.latitude*units.degree,
-                            lon=self.config.longitude*units.degree,
-                            height=self.config.elevation*units.m)
 
         if self.tilemode:
             tilename = hpix_or_tilename
@@ -83,11 +78,11 @@ class RegionMapper(object):
                                               self.config.tile_relpath(tilename),
                                               self.config.tile_input_filename(self.band,
                                                                               tilename))
-            if os.path.isfile(input_map_filename):
+            if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
             else:
                 input_map = self.build_region_input_map(indices, tilename=tilename)
-                input_map.write(input_map_filename)
+                input_map.write(input_map_filename, clobber=clobber)
         else:
             hpix = hpix_or_tilename
             print("Computing maps for pixel %d with %d inputs" % (hpix, len(indices)))
@@ -102,11 +97,11 @@ class RegionMapper(object):
                                               self.config.healpix_relpath(hpix),
                                               self.config.healpix_input_filename(self.band,
                                                                                  hpix))
-            if os.path.isfile(input_map_filename):
+            if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
             else:
                 input_map = self.build_region_input_map(indices, hpix=hpix)
-                input_map.write(input_map_filename)
+                input_map.write(input_map_filename, clobber=clobber)
 
         valid_pixels, vpix_ra, vpix_dec = input_map.valid_pixels_pos(lonlat=True,
                                                                      return_pixels=True)
@@ -156,7 +151,7 @@ class RegionMapper(object):
                                                                           hpix,
                                                                           map_type,
                                                                           op_code))
-                if os.path.isfile(fname):
+                if os.path.isfile(fname) and not clobber:
                     op_code = OP_NONE
 
                 op_list.append(op_code)
@@ -219,7 +214,7 @@ class RegionMapper(object):
             nexp[use] += 1
 
             if has_zenith_quantity:
-                zenith, par_angle = self._compute_zenith_and_par_angles(loc, self.table['mjd_obs'][ind],
+                zenith, par_angle = self._compute_zenith_and_par_angles(self.table['decasu_lst'][ind],
                                                                         np.median(vpix_ra[use]),
                                                                         np.median(vpix_dec[use]))
 
@@ -292,7 +287,8 @@ class RegionMapper(object):
                                                             nside_sparse=self.config.nside,
                                                             dtype=map_values_list[i][:, j].dtype)
                     m[valid_pixels[valid_pixels_use]] = map_values_list[i][valid_pixels_use, j]
-                m.write(fname)
+                if not os.path.isfile(fname) or clobber:
+                    m.write(fname, clobber=clobber)
 
     def build_region_input_map(self, indices, tilename=None, hpix=None):
         """
@@ -481,14 +477,14 @@ class RegionMapper(object):
                      2.5*np.log10(1./np.sqrt(weights)))
         return maglimits
 
-    def _compute_zenith_and_par_angles(self, loc, mjd, ra, dec):
+    def _compute_zenith_and_par_angles(self, lst, ra, dec):
         """
         Compute the zenith angle for a given ra/dec
 
         Parameters
         ----------
-        loc : `astropy.coordinates.EarthLocation`
-        mjd : `float`
+        lst : `float`
+           Local sidereal time (degrees)
         ra : `float`
            RA in degrees
         dec : `float`
@@ -501,13 +497,9 @@ class RegionMapper(object):
         parallactic_angle : `float`, optional
            Parallactic angle in radians.
         """
-        t = Time(mjd, format='mjd', location=loc)
-        lst = t.sidereal_time('apparent')
-        ha = lst - ra*units.degree
-
         c_ra = ra*coord.degrees
         c_dec = dec*coord.degrees
-        c_ha = ha.to_value(units.degree)*coord.degrees
+        c_ha = (lst - ra)*coord.degrees
         c_lat = self.config.latitude*coord.degrees
         c_zenith = coord.CelestialCoord(c_ha + c_ra, c_lat)
         c_pointing = coord.CelestialCoord(c_ra, c_dec)

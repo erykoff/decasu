@@ -3,6 +3,10 @@ import healpy as hp
 import fitsio
 import esutil
 
+import astropy.units as units
+from astropy.time import Time
+from astropy.coordinates import EarthLocation
+
 from . import decasu_globals
 
 
@@ -42,14 +46,14 @@ class WcsTableBuilder(object):
                     dtype.extend([(extra_field, 'U%d' % (len(self.config.extra_fields[extra_field]) + 1))])
                     added_fields.append(extra_field)
 
-            if len(added_fields) == 0:
-                table = table_in
-            else:
-                table = np.zeros(table_in.size, dtype=dtype)
-                for name in table_in.dtype.names:
-                    table[name][:] = np.nan_to_num(table_in[name])
-                for field in added_fields:
-                    table[field][:] = self.config.extra_fields[field]
+            # And add in the hour angle and parallactic angle fields
+            dtype.extend([('decasu_lst', 'f8')])
+
+            table = np.zeros(table_in.size, dtype=dtype)
+            for name in table_in.dtype.names:
+                table[name][:] = np.nan_to_num(table_in[name])
+            for field in added_fields:
+                table[field][:] = self.config.extra_fields[field]
 
             if len(bands) == 0:
                 # Use them all, record the bands here
@@ -74,6 +78,16 @@ class WcsTableBuilder(object):
                 fulltable = np.append(fulltable, table)
 
         print('Found %d CCDs for %d bands.' % (len(fulltable), len(bands)))
+
+        print('Computing local sidereal time...')
+        loc = EarthLocation(lat=config.latitude*units.degree,
+                            lon=config.longitude*units.degree,
+                            height=config.elevation*units.m)
+
+        t = Time(fulltable['mjd_obs'], format='mjd', location=loc)
+        lst = t.sidereal_time('apparent')
+        fulltable['decasu_lst'] = lst.to_value(units.degree)
+        print('...done.')
 
         decasu_globals.table = fulltable
         self.nrows = len(fulltable)
