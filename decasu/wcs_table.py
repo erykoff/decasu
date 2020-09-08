@@ -90,7 +90,6 @@ class WcsTableBuilder(object):
         print('...done.')
 
         decasu_globals.table = fulltable
-        self.nrows = len(fulltable)
 
     def __call__(self, row):
         """

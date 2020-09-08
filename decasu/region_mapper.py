@@ -2,12 +2,14 @@ import os
 import numpy as np
 import healsparse
 import healpy as hp
+import esutil
+import time
 
 import coord
 
 from .utils import op_str_to_code
 from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
-from . import decasu_globals
+from . import decasu_globals as dg
 
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -55,15 +57,16 @@ class RegionMapper(object):
         clobber : `bool`, optional
            Clobber any existing files.
         """
-        self.table = decasu_globals.table
-        self.wcs_list = decasu_globals.wcs_list
-        self.tile_info = decasu_globals.tile_info
-        self.streak_table = decasu_globals.streak_table
-        self.bleed_table = decasu_globals.bleed_table
-        self.satstar_table = decasu_globals.satstar_table
+        # self.table = dg.table
+        # self.wcs_list = dg.wcs_list
+        # self.tile_info = dg.tile_info
+        # self.streak_table = dg.streak_table
+        # self.bleed_table = dg.bleed_table
+        # self.satstar_table = dg.satstar_table
 
-        self.band = self.table['band'][indices[0]]
+        self.band = dg.table['band'][indices[0]]
 
+        start_time = time.time()
         if self.tilemode:
             tilename = hpix_or_tilename
             print("Computing maps for tile %s with %d inputs" % (tilename, len(indices)))
@@ -109,8 +112,6 @@ class RegionMapper(object):
 
         if npixels == 0:
             return
-
-        pixel_min = valid_pixels.min()
 
         # Figure out how many maps we need to make and initialize memory
         map_values_list = []
@@ -185,7 +186,6 @@ class RegionMapper(object):
 
         weights = np.zeros(npixels)
         nexp = np.zeros(npixels, dtype=np.int32)
-
         # Compute the maps
         for i, ind in enumerate(indices):
             bit_a = i*2
@@ -214,7 +214,7 @@ class RegionMapper(object):
             nexp[use] += 1
 
             if has_zenith_quantity:
-                zenith, par_angle = self._compute_zenith_and_par_angles(self.table['decasu_lst'][ind],
+                zenith, par_angle = self._compute_zenith_and_par_angles(dg.table['decasu_lst'][ind],
                                                                         np.median(vpix_ra[use]),
                                                                         np.median(vpix_dec[use]))
 
@@ -239,7 +239,7 @@ class RegionMapper(object):
                 elif map_type == 'parallactic':
                     value = par_angle
                 else:
-                    value = self.table[map_type][ind]
+                    value = dg.table[map_type][ind]
 
                 for j, op in enumerate(map_operation_list[i]):
                     if op == OP_SUM:
@@ -250,10 +250,9 @@ class RegionMapper(object):
                         map_values_list[i][use, j] += pixel_weights*value
                     elif op == OP_MIN:
                         map_values_list[i][use, j] = np.fmin(map_values_list[i][use, j],
-                                                                    value)
+                                                             value)
                     elif op == OP_MAX:
-                        map_values_list[i][pixels_off, j] = np.fmax(map_values_list[i][use, j],
-                                                                    value)
+                        map_values_list[i][use, j] = np.fmax(map_values_list[i][use, j], value)
 
         # Finish computations and save
         valid_pixels_use, = np.where(nexp > 0)
@@ -290,6 +289,11 @@ class RegionMapper(object):
                 if not os.path.isfile(fname) or clobber:
                     m.write(fname, clobber=clobber)
 
+        if self.tilemode:
+            print("...finished maps for tile %s in %.2f s." % (tilename, time.time() - start_time))
+        else:
+            print("...finished maps for pixel %d in %.2f s." % (hpix, time.time() - start_time))
+
     def build_region_input_map(self, indices, tilename=None, hpix=None):
         """
         Build input map for a given tile or hpix.
@@ -318,38 +322,51 @@ class RegionMapper(object):
                                                                nside_sparse=self.config.nside,
                                                                dtype=healsparse.WIDE_MASK,
                                                                wide_mask_maxbits=len(indices)*2)
+
+        # Pre-match mask tables if available
+        expnums = np.unique(dg.table['expnum'][indices])
+        if dg.streak_table is not None:
+            _, streak_b = esutil.numpy_util.match(expnums,
+                                                  dg.streak_table['expnum'])
+        if dg.bleed_table is not None:
+            _, bleed_b = esutil.numpy_util.match(expnums,
+                                                 dg.bleed_table['expnum'])
+        if dg.satstar_table is not None:
+            _, satstar_b = esutil.numpy_util.match(expnums,
+                                                   dg.satstar_table['expnum'])
+
         metadata = {}
         for i, ind in enumerate(indices):
             # Everything needs to be done with 2 amps
             bit_a = i*2
             bit_b = i*2 + 1
 
-            metadata['B%04dCCD' % (bit_a)] = self.table['ccdnum'][ind]
-            metadata['B%04dCCD' % (bit_b)] = self.table['ccdnum'][ind]
-            metadata['B%04dEXP' % (bit_a)] = self.table['expnum'][ind]
-            metadata['B%04dEXP' % (bit_b)] = self.table['expnum'][ind]
+            metadata['B%04dCCD' % (bit_a)] = dg.table['ccdnum'][ind]
+            metadata['B%04dCCD' % (bit_b)] = dg.table['ccdnum'][ind]
+            metadata['B%04dEXP' % (bit_a)] = dg.table['expnum'][ind]
+            metadata['B%04dEXP' % (bit_b)] = dg.table['expnum'][ind]
             metadata['B%04dAMP' % (bit_a)] = 'A'
             metadata['B%04dAMP' % (bit_b)] = 'B'
             metadata['B%04dWT' % (bit_a)] = self._compute_weight('a', ind)
             metadata['B%04dWT' % (bit_b)] = self._compute_weight('b', ind)
 
-            wcs = self.wcs_list[ind]
+            wcs = dg.wcs_list[ind]
 
             if wcs is None:
                 continue
 
             x_coords_a = np.array([self.config.amp_boundary,
                                    self.config.amp_boundary,
-                                   self.table['naxis1'][ind] - self.config.border,
-                                   self.table['naxis1'][ind] - self.config.border])
+                                   dg.table['naxis1'][ind] - self.config.border,
+                                   dg.table['naxis1'][ind] - self.config.border])
             x_coords_b = np.array([self.config.border,
                                    self.config.border,
                                    self.config.amp_boundary,
                                    self.config.amp_boundary])
 
             y_coords = np.array([self.config.border,
-                                 self.table['naxis2'][ind] - self.config.border,
-                                 self.table['naxis2'][ind] - self.config.border,
+                                 dg.table['naxis2'][ind] - self.config.border,
+                                 dg.table['naxis2'][ind] - self.config.border,
                                  self.config.border])
 
             ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
@@ -359,40 +376,41 @@ class RegionMapper(object):
             poly_b = healsparse.Polygon(ra=ra_b, dec=dec_b, value=[bit_b])
 
             # Check if we have additional masking
-            if (self.streak_table is not None or self.bleed_table is not None or \
-                    self.satstar_table is not None):
+            if (dg.streak_table is not None or dg.bleed_table is not None or
+                    dg.satstar_table is not None):
                 poly_map_a = poly_a.get_map_like(region_input_map)
                 poly_map_b = poly_b.get_map_like(region_input_map)
 
                 mask_reg_list = []
 
-                if self.streak_table is not None:
-                    # This may need to be optimized
-                    sinds, = np.where((self.streak_table['expnum'] == self.table['expnum'][ind]) &
-                                      (self.streak_table['ccdnum'] == self.table['ccdnum'][ind]))
-                    for sind in sinds:
-                        mask_reg_list.append(self._get_maskpoly_from_row(self.streak_table[sind]))
+                if dg.streak_table is not None:
+                    sinds, = np.where((dg.streak_table['expnum'][streak_b] == dg.table['expnum'][ind]) &
+                                      (dg.streak_table['ccdnum'][streak_b] == dg.table['ccdnum'][ind]))
+                    for sind in streak_b[sinds]:
+                        mask_reg_list.append(self._get_maskpoly_from_row(dg.streak_table[sind]))
 
-                if self.bleed_table is not None:
-                    binds, = np.where((self.bleed_table['expnum'] == self.table['expnum'][ind]) &
-                                      (self.bleed_table['ccdnum'] == self.table['ccdnum'][ind]))
-                    for bind in binds:
-                        mask_reg_list.append(self._get_maskpoly_from_row(self.bleed_table[bind]))
+                if dg.bleed_table is not None:
+                    binds, = np.where((dg.bleed_table['expnum'][bleed_b] == dg.table['expnum'][ind]) &
+                                      (dg.bleed_table['ccdnum'][bleed_b] == dg.table['ccdnum'][ind]))
+                    for bind in bleed_b[binds]:
+                        mask_reg_list.append(self._get_maskpoly_from_row(dg.bleed_table[bind]))
 
-                if self.satstar_table is not None:
-                    sinds, = np.where((self.satstar_table['expnum'] == self.table['expnum'][ind]) &
-                                      (self.satstar_table['ccdnum'] == self.table['ccdnum'][ind]))
-                    for sind in sinds:
-                        mask_reg_list.append(self._get_maskcircle_from_row(self.satstar_table[sind]))
+                if dg.satstar_table is not None:
+                    sinds, = np.where((dg.satstar_table['expnum'][satstar_b] == dg.table['expnum'][ind]) &
+                                      (dg.satstar_table['ccdnum'][satstar_b] == dg.table['ccdnum'][ind]))
+                    for sind in satstar_b[sinds]:
+                        mask_reg_list.append(self._get_maskcircle_from_row(dg.satstar_table[sind]))
+
                 mask_map = healsparse.HealSparseMap.make_empty(nside_coverage=self.nside_coverage_region,
                                                                nside_sparse=self.config.nside,
                                                                dtype=np.uint8)
                 healsparse.realize_geom(mask_reg_list, mask_map)
+
                 poly_map_a.apply_mask(mask_map)
                 poly_map_b.apply_mask(mask_map)
-
                 pixels_a = poly_map_a.valid_pixels
                 pixels_b = poly_map_b.valid_pixels
+
             else:
                 # With no masking we can do a slightly faster version direct
                 # with the pixels
@@ -400,8 +418,8 @@ class RegionMapper(object):
                 pixels_b = poly_b.get_pixels(nside=self.config.nside)
 
             # Check for bad amps
-            if int(self.table['ccdnum'][ind]) in list(self.config.bad_amps):
-                ba = self.config.bad_amps[int(self.table['ccdnum'][ind])]
+            if int(dg.table['ccdnum'][ind]) in list(self.config.bad_amps):
+                ba = self.config.bad_amps[int(dg.table['ccdnum'][ind])]
                 for b in ba:
                     if b.lower() == 'a':
                         pixels_a = np.array([], dtype=np.int64)
@@ -409,25 +427,26 @@ class RegionMapper(object):
                         pixels_b = np.array([], dtype=np.int64)
 
             if tilename is not None:
-                tind, = np.where(self.tile_info['tilename'] == tilename)
+                tind, = np.where(dg.tile_info['tilename'] == tilename)
                 for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
                     pixra, pixdec = hp.pix2ang(self.config.nside, pixels, lonlat=True, nest=True)
-                    if self.tile_info['crossra0'][tind] == 'Y':
+                    if dg.tile_info['crossra0'][tind] == 'Y':
                         # Special for cross-ra0, where uramin will be very large
-                        uramin = self.tile_info['uramin'][tind] - 360.0
+                        uramin = dg.tile_info['uramin'][tind] - 360.0
                         pixra_rot = pixra.copy()
                         hi, = np.where(pixra > 180.0)
                         pixra_rot[hi] -= 360.0
                         ok = ((pixra_rot > uramin) &
-                              (pixra_rot < self.tile_info['uramax'][tind]) &
-                              (pixdec > self.tile_info['udecmin'][tind]) &
-                              (pixdec <= self.tile_info['udecmax'][tind]))
+                              (pixra_rot < dg.tile_info['uramax'][tind]) &
+                              (pixdec > dg.tile_info['udecmin'][tind]) &
+                              (pixdec <= dg.tile_info['udecmax'][tind]))
                     else:
-                        ok = ((pixra > self.tile_info['uramin'][tind]) &
-                              (pixra <= self.tile_info['uramax'][tind]) &
-                              (pixdec > self.tile_info['udecmin'][tind]) &
-                              (pixdec <= self.tile_info['udecmax'][tind]))
+                        ok = ((pixra > dg.tile_info['uramin'][tind]) &
+                              (pixra <= dg.tile_info['uramax'][tind]) &
+                              (pixdec > dg.tile_info['udecmin'][tind]) &
+                              (pixdec <= dg.tile_info['udecmax'][tind]))
                     region_input_map.set_bits_pix(pixels[ok], [bit])
+
             else:
                 # healpix mode
                 bit_shift = 2*int(np.round(np.log2(self.config.nside/self.config.nside_run)))
@@ -453,9 +472,9 @@ class RegionMapper(object):
         ind : `int`
            Index in table to compute
         """
-        return 1.0/(self.table['skyvar' + ampname][ind] *
+        return 1.0/(dg.table['skyvar' + ampname][ind] *
                     100.**((self.config.zp_global -
-                           self.table[self.config.magzp_field][ind])/2.5))
+                           dg.table[self.config.magzp_field][ind])/2.5))
 
     def _compute_maglimits(self, weights):
         """
@@ -573,4 +592,3 @@ class RegionMapper(object):
                                        radius=table_row['radius']/3600.,
                                        value=1)
         return maskcircle
-

@@ -6,6 +6,8 @@ from .utils import op_str_to_code
 from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
 from . import decasu_globals
 
+# DEPRECATED, REMOVE SOON
+
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -89,12 +91,7 @@ class HealpixMapper(object):
 
                 # Check to see if file already exists
                 if self.tilemode:
-                    fname = os.path.join(self.outputpath,
-                                         self.config.tile_relpath(tilename),
-                                         self.config.tile_map_filename(self.table['band'][indices[0]],
-                                                                       tile,
-                                                                       map_type,
-                                                                       op_code))
+                    pass
                 else:
                     fname = os.path.join(self.outputpath,
                                          self.config.healpix_relpath(hpix),

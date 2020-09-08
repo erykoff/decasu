@@ -44,6 +44,7 @@ class Configuration(object):
     latitude: float = -30.1690
     longitude: float = -70.8063
     elevation: float = 2200.0
+    satstar_maxrad: float = 400.0
 
     def __post_init__(self):
         self._validate()

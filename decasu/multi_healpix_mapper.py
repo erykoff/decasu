@@ -6,7 +6,6 @@ import esutil
 import glob
 
 from .wcs_table import WcsTableBuilder
-from .healpix_mapper import HealpixMapper
 from .region_mapper import RegionMapper
 from .healpix_consolidator import HealpixConsolidator
 from .utils import op_str_to_code
@@ -57,7 +56,9 @@ class MultiHealpixMapper(object):
         print('Generating WCSs...')
         t = time.time()
         pool = Pool(processes=self.ncores)
-        wcs_list, pixel_list, center_list = zip(*pool.map(wcs_builder, range(wcs_builder.nrows), chunksize=1))
+        wcs_list, pixel_list, center_list = zip(*pool.map(wcs_builder,
+                                                          range(len(decasu_globals.table)),
+                                                          chunksize=1))
         pool.close()
         pool.join()
         print('Time elapsed: ', time.time() - t)
@@ -95,7 +96,6 @@ class MultiHealpixMapper(object):
                     wcsindex_list.append(wcs_inds[ok])
 
         # Generate maps
-        # hpix_mapper = HealpixMapper(self.config, self.outputpath)
         region_mapper = RegionMapper(self.config, self.outputpath, 'pixel',
                                      self.config.nside_coverage)
 
