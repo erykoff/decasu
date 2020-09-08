@@ -4,7 +4,8 @@ exec(open('decasu/_version.py').read())
 
 name = 'decasu'
 
-scripts = ['scripts/decasu_mapper.py']
+scripts = ['scripts/decasu_hpix_mapper.py',
+           'scripts/decasu_tile_mapper.py']
 
 setup(
     name=name,

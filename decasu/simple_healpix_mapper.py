@@ -6,7 +6,7 @@ import healsparse
 import time
 
 
-class SimpleMapper(object):
+class SimpleHealpixMapper(object):
     """
     Do a simple map
 

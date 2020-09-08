@@ -14,6 +14,10 @@ def _default_extra_fields():
             'cunit2': 'deg'}
 
 
+def _default_bad_amps():
+    return {31: ['a']}
+
+
 @dataclass
 class Configuration(object):
     """
@@ -36,6 +40,11 @@ class Configuration(object):
     zp_global: float = 30.0
     zp_sign_swap: bool = False
     magzp_field: str = 'mag_zero'
+    bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
+    latitude: float = -30.1690
+    longitude: float = -70.8063
+    elevation: float = 2200.0
+    satstar_maxrad: float = 400.0
 
     def __post_init__(self):
         self._validate()
@@ -76,6 +85,20 @@ class Configuration(object):
         """
         return '%d_%05d' % (self.nside_run, hpix)
 
+    def tile_relpath(self, tilename):
+        """
+        Compute relative path for a given tile
+
+        Parameters
+        ----------
+        tilename : `str`
+
+        Returns
+        -------
+        relpath : `str`
+        """
+        return '%s' % (tilename)
+
     def healpix_map_filename(self, band, hpix, map_type, operation):
         """
         Compute healpix map filename.
@@ -102,6 +125,31 @@ class Configuration(object):
                                            map_type,
                                            op_code_to_str(operation))
 
+    def tile_map_filename(self, band, tilename, map_type, operation):
+        """
+        Compute healpix map filename.
+
+        Parameters
+        ----------
+        band : `str`
+           Name of band
+        tilename : `str`
+           Name of tile
+        map_type : `str`
+           Type of map
+        operation : `int`
+           Enumerated operation type
+
+        Returns
+        -------
+        filename : `str`
+        """
+        return "%s_%s_%s_%s_%s.hs" % (self.outbase,
+                                      tilename,
+                                      band,
+                                      map_type,
+                                      op_code_to_str(operation))
+
     def healpix_map_filename_template(self, band, map_type, operation):
         """
         Compute healpix map template filename
@@ -126,6 +174,66 @@ class Configuration(object):
                                             band,
                                             map_type,
                                             op_code_to_str(operation))
+
+    def tile_map_filename_template(self, band, map_type, operation):
+        """
+        Compute coadd tile map template filename.
+
+        Parameters
+        ----------
+        band : `str`
+           Name of band
+        hpix : `int`
+           Number of healpix
+        map_type : `str`
+           Type of map
+        operation : `int`
+           Enumerated operation type
+
+        Returns
+        -------
+        template : `str`
+        """
+        return "%s_%s_%s_%s_%s.hs" % (self.outbase,
+                                      '?'*12,
+                                      band,
+                                      map_type,
+                                      op_code_to_str(operation))
+
+    def healpix_input_filename(self, band, hpix):
+        """
+        Healpix input map filename.
+
+        Parameters
+        ----------
+        band : `str`
+        hpix : `int`
+
+        Returns
+        -------
+        Filename for the input map.
+        """
+        return "%s_%d_%05d_%s_inputs.hs" % (self.outbase,
+                                            self.nside_run,
+                                            hpix,
+                                            band)
+
+    def tile_input_filename(self, band, tilename):
+        """
+        Tile input map filename.
+
+        Parameters
+        ----------
+        band : `str`
+        tilename : `str`
+
+        Returns
+        -------
+        Filename for the input map.
+        """
+        return "%s_%s_%s_inputs.hs" % (self.outbase,
+                                       tilename,
+                                       band)
 
     def map_filename(self, band, map_type, operation):
         """
