@@ -1,0 +1,16 @@
+outbase: 'testing'
+nside: 16384
+map_types:
+  coverage: ['sum']
+  nexp: ['sum']
+  exptime: ['sum']
+  airmass: ['wmean', 'min', 'max']
+  dcr_dra: ['wmean']
+  dcr_ddec: ['wmean']
+  dcr_e1: ['wmean']
+  dcr_e2: ['wmean']
+  maglimit: ['wmean']
+  skysigma: ['wmean']
+  skybrite: ['wmean']
+  fwhm: ['wmean']
+
