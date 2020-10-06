@@ -3,6 +3,6 @@ healpy
 astropy
 healsparse
 fitsio>=1.0.5
-esutil>=0.6.4
+esutil>=0.6.5
 LSSTDESC.Coord
 pyyaml>=5.0
