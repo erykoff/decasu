@@ -9,6 +9,7 @@ import coord
 
 from .utils import op_str_to_code
 from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
+from .utils import OP_SUM_SCALED, OP_MEAN_SCALED, OP_WMEAN_SCALED, OP_MIN_SCALED, OP_MAX_SCALED
 from . import decasu_globals as dg
 
 
@@ -151,7 +152,8 @@ class RegionMapper(object):
                 op_list.append(op_code)
                 fname_list.append(fname)
 
-                if op_code == OP_MIN or op_code == OP_MAX:
+                if op_code == OP_MIN or op_code == OP_MAX or \
+                        op_code == OP_MIN_SCALED or op_code == OP_MAX_SCALED:
                     # We use fmin and fmax, so nans get overwritten
                     map_values[:, j] = np.nan
 
@@ -162,12 +164,16 @@ class RegionMapper(object):
         # Check if all the operations are OP_NONE and we can skip entirely
         any_to_compute = False
         any_weights = False
+        any_scales = False
         for i, map_type in enumerate(self.config.map_types.keys()):
             for op in map_operation_list[i]:
                 if op != OP_NONE:
                     any_to_compute = True
-                if op == OP_WMEAN:
+                if op == OP_WMEAN or op == OP_WMEAN_SCALED:
                     any_weights = True
+                if op == OP_SUM_SCALED or op == OP_MEAN_SCALED or op == OP_WMEAN_SCALED \
+                        or op == OP_MIN_SCALED or op == OP_MAX_SCALED:
+                    any_scales = True
 
         if not any_to_compute:
             # Everything is already there
@@ -210,6 +216,8 @@ class RegionMapper(object):
                 zenith, par_angle = self._compute_zenith_and_par_angles(dg.table['decasu_lst'][ind],
                                                                         np.median(vpix_ra[use]),
                                                                         np.median(vpix_dec[use]))
+            if any_scales:
+                calibscale = 10.**((self.config.zp_global - dg.table[self.config.magzp_field][ind])/2.5)
 
             for i, map_type in enumerate(self.config.map_types.keys()):
                 if map_type == 'nexp':
@@ -246,15 +254,28 @@ class RegionMapper(object):
                 for j, op in enumerate(map_operation_list[i]):
                     if op == OP_SUM:
                         map_values_list[i][use, j] += value
+                    elif op == OP_SUM_SCALED:
+                        map_values_list[i][use, j] += calibscale*value
                     elif op == OP_MEAN:
                         map_values_list[i][use, j] += value
+                    elif op == OP_MEAN_SCALED:
+                        map_values_list[i][use, j] += calibscale*value
                     elif op == OP_WMEAN:
                         map_values_list[i][use, j] += pixel_weights*value
+                    elif op == OP_WMEAN_SCALED:
+                        map_values_list[i][use, j] += calibscale*pixel_weights*value
                     elif op == OP_MIN:
                         map_values_list[i][use, j] = np.fmin(map_values_list[i][use, j],
                                                              value)
+                    elif op == OP_MIN_SCALED:
+                        map_values_list[i][use, j] = np.fmin(map_values_list[i][use, j],
+                                                             calibscale*value)
                     elif op == OP_MAX:
-                        map_values_list[i][use, j] = np.fmax(map_values_list[i][use, j], value)
+                        map_values_list[i][use, j] = np.fmax(map_values_list[i][use, j],
+                                                             value)
+                    elif op == OP_MAX_SCALED:
+                        map_values_list[i][use, j] = np.fmax(map_values_list[i][use, j],
+                                                             calibscale*value)
 
         # Finish computations and save
         valid_pixels_use, = np.where(nexp > 0)
@@ -269,7 +290,7 @@ class RegionMapper(object):
                     continue
                 elif op == OP_MEAN:
                     map_values_list[i][valid_pixels_use, j] /= nexp[valid_pixels_use]
-                elif op == OP_WMEAN:
+                elif op == OP_WMEAN or op == OP_WMEAN_SCALED:
                     if map_type == 'maglim':
                         maglims = self._compute_maglimits(weights[valid_pixels_use])
                         map_values_list[i][valid_pixels_use, j] = maglims

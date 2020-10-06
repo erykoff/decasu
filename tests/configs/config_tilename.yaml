@@ -3,7 +3,7 @@ nside: 16384
 map_types:
   coverage: ['sum']
   nexp: ['sum']
-  exptime: ['sum']
+  exptime: ['sum', 'sum-scaled']
   airmass: ['wmean', 'min', 'max']
   dcr_dra: ['wmean']
   dcr_ddec: ['wmean']
@@ -12,7 +12,7 @@ map_types:
   maglim: ['wmean']
   sblim: ['wmean']
   skysigma: ['wmean']
-  skybrite: ['wmean']
+  skybrite: ['wmean', 'wmean-scaled', 'min-scaled', 'max-scaled', 'mean', 'mean-scaled']
   skyvar: ['wmean', 'min']
   fwhm: ['wmean']
 
