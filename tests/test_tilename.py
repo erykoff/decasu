@@ -53,6 +53,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['nexp_sum'] = [0, 7, 'int32']
         expected_dict['skybrite_wmean'] = [1830.0, 5550.0, 'float64']
         expected_dict['skysigma_wmean'] = [51.4, 77.2, 'float64']
+        expected_dict['skyvar_wmean'] = [2950.0, 5991.0, 'float64']
+        expected_dict['skyvar_min'] = [2705.0, 5991.0, 'float64']
 
         self.check_expected_maps_tile(expected_dict, 'DES0003-5457', band)
 
@@ -73,6 +75,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['exptime_sum'] = [80.0, 640.0, 'float64']
         expected_dict['skybrite_wmean'] = [2510.0, 5565.0, 'float64']
         expected_dict['skysigma_wmean'] = [50.1, 78.7, 'float64']
+        expected_dict['skyvar_wmean'] = [2520.0, 6223.0, 'float64']
+        expected_dict['skyvar_min'] = [2503.0, 6223.0, 'float64']
 
         self.check_expected_maps_tile(expected_dict, 'DES2358-5457', band)
 
@@ -84,6 +88,10 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
                               band, 'fwhm', 'wmean', 0.025, 0.01, scale=0.263)
         self.check_mangle_map('y3a2_%s_mangle_4096' % (band),
                               band, 'maglim', 'wmean', 0.03, 0.1)
+        self.check_mangle_map('y3a2_%s_mangle_4096' % (band),
+                              band, 'skybrite', 'wmean', 0.03, 0.015)
+        self.check_mangle_map('y3a2_%s_mangle_4096' % (band),
+                              band, 'skyvar', 'wmean', 0.03, 0.015)
 
 
 if __name__ == '__main__':

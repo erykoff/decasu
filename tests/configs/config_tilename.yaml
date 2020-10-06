@@ -13,5 +13,6 @@ map_types:
   sblim: ['wmean']
   skysigma: ['wmean']
   skybrite: ['wmean']
+  skyvar: ['wmean', 'min']
   fwhm: ['wmean']
 

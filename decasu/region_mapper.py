@@ -57,13 +57,6 @@ class RegionMapper(object):
         clobber : `bool`, optional
            Clobber any existing files.
         """
-        # self.table = dg.table
-        # self.wcs_list = dg.wcs_list
-        # self.tile_info = dg.tile_info
-        # self.streak_table = dg.streak_table
-        # self.bleed_table = dg.bleed_table
-        # self.satstar_table = dg.satstar_table
-
         self.band = dg.table['band'][indices[0]]
 
         start_time = time.time()
@@ -221,6 +214,12 @@ class RegionMapper(object):
             for i, map_type in enumerate(self.config.map_types.keys()):
                 if map_type == 'nexp':
                     value = 1
+                elif map_type == 'skyvar':
+                    # This is special because it is per-amp.
+                    value_temp = np.zeros(valid_pixels.size)
+                    value_temp[use_a] = dg.table['skyvara'][ind]
+                    value_temp[use_b] = dg.table['skyvarb'][ind]
+                    value = value_temp[use]
                 elif map_type == 'maglim':
                     # We compute this below from the weights
                     value = 0.0
