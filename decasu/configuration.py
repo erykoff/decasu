@@ -37,6 +37,7 @@ class Configuration(object):
     amp_boundary: int = 1024
     arcsec_per_pix: float = 0.263
     maglim_aperture: float = 2.0
+    maglim_nsig: float = 10.0
     zp_global: float = 30.0
     zp_sign_swap: bool = False
     magzp_field: str = 'mag_zero'
