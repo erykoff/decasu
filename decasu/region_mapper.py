@@ -221,7 +221,10 @@ class RegionMapper(object):
             for i, map_type in enumerate(self.config.map_types.keys()):
                 if map_type == 'nexp':
                     value = 1
-                elif map_type == 'maglimit':
+                elif map_type == 'maglim':
+                    # We compute this below from the weights
+                    value = 0.0
+                elif map_type == 'sblim':
                     # We compute this below from the weights
                     value = 0.0
                 elif map_type == 'coverage':
@@ -268,9 +271,12 @@ class RegionMapper(object):
                 elif op == OP_MEAN:
                     map_values_list[i][valid_pixels_use, j] /= nexp[valid_pixels_use]
                 elif op == OP_WMEAN:
-                    if map_type == 'maglimit':
-                        maglimits = self._compute_maglimits(weights[valid_pixels_use])
-                        map_values_list[i][valid_pixels_use, j] = maglimits
+                    if map_type == 'maglim':
+                        maglims = self._compute_maglimits(weights[valid_pixels_use])
+                        map_values_list[i][valid_pixels_use, j] = maglims
+                    elif map_type == 'sblim':
+                        sblims = self._compute_sblimits(weights[valid_pixels_use])
+                        map_values_list[i][valid_pixels_use, j] = sblims
                     else:
                         map_values_list[i][valid_pixels_use, j] /= weights[valid_pixels_use]
                 fname = map_fname_list[i][j]
@@ -487,14 +493,32 @@ class RegionMapper(object):
 
         Returns
         -------
-        maglimits : `np.ndarray`
+        maglims : `np.ndarray`
            Array of mag limits
         """
-        maglimits = (self.config.zp_global -
-                     2.5*np.log10(10.*np.sqrt(np.pi) *
-                                  self.config.maglim_aperture/(2.*self.config.arcsec_per_pix)) -
-                     2.5*np.log10(1./np.sqrt(weights)))
-        return maglimits
+        maglims = (self.config.zp_global -
+                   2.5*np.log10(self.config.maglim_nsig*np.sqrt(np.pi) *
+                                self.config.maglim_aperture/(2.*self.config.arcsec_per_pix)) -
+                   2.5*np.log10(1./np.sqrt(weights)))
+        return maglims
+
+    def _compute_sblimits(self, weights):
+        """
+        Compute the surface-brightness limits from summed weights.
+
+        Parameters
+        ----------
+        weights : `np.ndarray`
+           Array of summed weights
+
+        Returns
+        -------
+        sblims : `np.ndarray`
+           Array of surface brightness limits
+        """
+        sblims = (self.config.zp_global -
+                  2.5*np.log10((1./np.sqrt(weights))/(2.*self.config.arcsec_per_pix)))
+        return sblims
 
     def _compute_zenith_and_par_angles(self, lst, ra, dec):
         """

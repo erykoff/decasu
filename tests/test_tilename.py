@@ -48,7 +48,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['dcr_e1_wmean'] = [-1.02, 0.22, 'float64']
         expected_dict['dcr_e2_wmean'] = [-0.13, 0.45, 'float64']
         expected_dict['fwhm_wmean'] = [2.50, 4.40, 'float64']
-        expected_dict['maglimit_wmean'] = [22.37, 23.60, 'float64']
+        expected_dict['maglim_wmean'] = [22.37, 23.60, 'float64']
+        expected_dict['sblim_wmean'] = [26.25, 27.5, 'float64']
         expected_dict['nexp_sum'] = [0, 7, 'int32']
         expected_dict['skybrite_wmean'] = [1830.0, 5550.0, 'float64']
         expected_dict['skysigma_wmean'] = [51.4, 77.2, 'float64']
@@ -66,7 +67,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['dcr_e1_wmean'] = [-0.82, 0.22, 'float64']
         expected_dict['dcr_e2_wmean'] = [-0.12, 0.46, 'float64']
         expected_dict['fwhm_wmean'] = [2.50, 4.02, 'float64']
-        expected_dict['maglimit_wmean'] = [22.37, 23.60, 'float64']
+        expected_dict['maglim_wmean'] = [22.37, 23.60, 'float64']
+        expected_dict['sblim_wmean'] = [26.24, 27.5, 'float64']
         expected_dict['nexp_sum'] = [0, 7, 'int32']
         expected_dict['exptime_sum'] = [80.0, 640.0, 'float64']
         expected_dict['skybrite_wmean'] = [2510.0, 5565.0, 'float64']
@@ -81,7 +83,7 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         self.check_mangle_map('y3a2_%s_mangle_4096' % (band),
                               band, 'fwhm', 'wmean', 0.025, 0.01, scale=0.263)
         self.check_mangle_map('y3a2_%s_mangle_4096' % (band),
-                              band, 'maglimit', 'wmean', 0.03, 0.1)
+                              band, 'maglim', 'wmean', 0.03, 0.1)
 
 
 if __name__ == '__main__':
