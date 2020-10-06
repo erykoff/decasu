@@ -9,8 +9,10 @@ map_types:
   dcr_ddec: ['wmean']
   dcr_e1: ['wmean']
   dcr_e2: ['wmean']
-  maglimit: ['wmean']
+  maglim: ['wmean']
+  sblim: ['wmean']
   skysigma: ['wmean']
   skybrite: ['wmean']
+  skyvar: ['wmean', 'min']
   fwhm: ['wmean']
 
