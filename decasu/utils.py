@@ -10,6 +10,11 @@ OP_WMEAN = 3
 OP_MIN = 4
 OP_MAX = 5
 OP_OR = 6
+OP_SUM_SCALED = 7
+OP_MEAN_SCALED = 8
+OP_WMEAN_SCALED = 9
+OP_MIN_SCALED = 10
+OP_MAX_SCALED = 11
 
 
 valid_map_types_basic = ['nexp']
@@ -41,6 +46,16 @@ def op_code_to_str(op_code):
         op_str = 'max'
     elif op_code == OP_OR:
         op_str = 'or'
+    elif op_code == OP_SUM_SCALED:
+        op_str = 'sum-scaled'
+    elif op_code == OP_MEAN_SCALED:
+        op_str = 'mean-scaled'
+    elif op_code == OP_WMEAN_SCALED:
+        op_str = 'wmean-scaled'
+    elif op_code == OP_MIN_SCALED:
+        op_str = 'min-scaled'
+    elif op_code == OP_MAX_SCALED:
+        op_str = 'max-scaled'
 
     return op_str
 
@@ -71,6 +86,16 @@ def op_str_to_code(op_str):
         op_code = OP_MAX
     elif op_str == 'or':
         op_code = OP_OR
+    elif op_str == 'sum-scaled':
+        op_code = OP_SUM_SCALED
+    elif op_str == 'mean-scaled':
+        op_code = OP_MEAN_SCALED
+    elif op_str == 'wmean-scaled':
+        op_code = OP_WMEAN_SCALED
+    elif op_str == 'min-scaled':
+        op_code = OP_MIN_SCALED
+    elif op_str == 'max-scaled':
+        op_code = OP_MAX_SCALED
 
     return op_code
 

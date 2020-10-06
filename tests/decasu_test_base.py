@@ -69,9 +69,9 @@ class DecasuTestBase(unittest.TestCase):
                 testing.assert_array_equal(valid_pixels, input_valid_pixels)
 
                 self.assertEqual(m.dtype.name, expected_dict[em][2])
-                self.assertGreater(np.min(m.get_values_pix(valid_pixels)),
+                self.assertGreater(np.min(m[valid_pixels]),
                                    expected_dict[em][0])
-                self.assertLess(np.max(m.get_values_pix(valid_pixels)),
+                self.assertLess(np.max(m[valid_pixels]),
                                 expected_dict[em][1])
 
         return mod_times
