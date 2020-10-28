@@ -119,6 +119,26 @@ def read_maskfiles(expnums, maskfiles):
     masktable = None
     for maskfile in maskfiles:
         subtable = fitsio.read(maskfile, ext=1, lower=True, trim_strings=True)
+
+        # Check for zero-size regions...
+        if 'radius' in subtable.dtype.names:
+            gd, = np.where(subtable['radius'] > 0.0)
+            if gd.size < subtable.size:
+                print("Removing %d regions of zero radius." % (subtable.size - gd.size))
+                subtable = subtable[gd]
+        elif 'ra_1' in subtable.dtype.names:
+            ras = np.vstack((subtable['ra_1'], subtable['ra_2'],
+                             subtable['ra_3'], subtable['ra_4']))
+            decs = np.vstack((subtable['dec_1'], subtable['dec_2'],
+                              subtable['dec_3'], subtable['dec_4']))
+            delta_ra = ras.max(axis=0) - ras.min(axis=0)
+            delta_dec = decs.max(axis=0) - decs.min(axis=0)
+
+            gd, = np.where((delta_ra > 0.0) & (delta_dec > 0.0))
+            if gd.size < subtable.size:
+                print("Removing %d regions of zero extent." % (subtable.size - gd.size))
+                subtable = subtable[gd]
+
         a, b = esutil.numpy_util.match(expnums, subtable['expnum'])
         if masktable is None:
             masktable = subtable[b]
