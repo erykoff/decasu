@@ -17,7 +17,7 @@ arcsec_per_pix: 0.17
 maglim_aperture: 4.08
 maglim_nsig: 5.0
 zp_global: 27.0
-magzp_field: "magzero"
+magzp_field: "zeropt"
 exp_field: "visit"
 ccd_field: "ccd"
 band_field: "filter"
