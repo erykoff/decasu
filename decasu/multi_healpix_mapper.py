@@ -89,8 +89,7 @@ class MultiHealpixMapper(object):
 
             # This could probably be more efficient
             for band in wcs_builder.bands:
-                # ok, = np.where(wcs_builder.table['band'][wcs_inds] == band)
-                ok, = np.where(table['band'][wcs_inds] == band)
+                ok, = np.where(table[self.config.band_field][wcs_inds] == band)
                 if ok.size > 0:
                     runpix_list.append(pixel_arr[i1a[0]])
                     wcsindex_list.append(wcs_inds[ok])
@@ -104,7 +103,6 @@ class MultiHealpixMapper(object):
         print('Generating maps for %d pixels...' % (len(runpix_list)))
         t = time.time()
         pool = Pool(processes=self.ncores)
-        # pool.starmap(hpix_mapper, values, chunksize=1)
         pool.starmap(region_mapper, values, chunksize=1)
         pool.close()
         pool.join()

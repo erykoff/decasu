@@ -58,7 +58,7 @@ class RegionMapper(object):
         clobber : `bool`, optional
            Clobber any existing files.
         """
-        self.band = dg.table['band'][indices[0]]
+        self.band = dg.table[self.config.band_field][indices[0]]
 
         start_time = time.time()
         if self.tilemode:
@@ -187,29 +187,46 @@ class RegionMapper(object):
         nexp = np.zeros(npixels, dtype=np.int32)
         # Compute the maps
         for i, ind in enumerate(indices):
-            bit_a = i*2
-            bit_b = i*2 + 1
+            if self.config.use_two_amps:
+                bit_a = i*2
+                bit_b = i*2 + 1
 
-            use_a, = np.where(input_map.check_bits_pix(valid_pixels, [bit_a]))
-            use_b, = np.where(input_map.check_bits_pix(valid_pixels, [bit_b]))
+                use_a, = np.where(input_map.check_bits_pix(valid_pixels, [bit_a]))
+                use_b, = np.where(input_map.check_bits_pix(valid_pixels, [bit_b]))
 
-            if use_a.size == 0 and use_b.size == 0:
-                # Nothing to see here, move along.
-                continue
+                if use_a.size == 0 and use_b.size == 0:
+                    # Nothing to see here, move along.
+                    continue
 
-            if any_weights:
-                pixel_weights_a = input_map.metadata['B%04dWT' % (bit_a)]
-                pixel_weights_b = input_map.metadata['B%04dWT' % (bit_b)]
+                if any_weights:
+                    pixel_weights_a = input_map.metadata['B%04dWT' % (bit_a)]
+                    pixel_weights_b = input_map.metadata['B%04dWT' % (bit_b)]
+                else:
+                    pixel_weights_a = 1.0
+                    pixel_weights_b = 1.0
+
+                weights[use_a] += pixel_weights_a
+                weights[use_b] += pixel_weights_b
+
+                use = np.concatenate((use_a, use_b))
+                pixel_weights = np.concatenate((np.full(use_a.size, pixel_weights_a),
+                                                np.full(use_b.size, pixel_weights_b)))
             else:
-                pixel_weights_a = 1.0
-                pixel_weights_b = 1.0
+                bit = i
 
-            weights[use_a] += pixel_weights_a
-            weights[use_b] += pixel_weights_b
+                use, = np.where(input_map.check_bits_pix(valid_pixels, [bit]))
 
-            use = np.concatenate((use_a, use_b))
-            pixel_weights = np.concatenate((np.full(use_a.size, pixel_weights_a),
-                                            np.full(use_b.size, pixel_weights_b)))
+                if use.size == 0:
+                    # Nothing to see here, move along.
+                    continue
+
+                if any_weights:
+                    pixel_weights = input_map.metadata['B%04dWT' % (bit)]
+                else:
+                    pixel_weights = 1.0
+
+                weights[use] += pixel_weights
+
             nexp[use] += 1
 
             if has_zenith_quantity:
@@ -225,8 +242,11 @@ class RegionMapper(object):
                 elif map_type == 'skyvar':
                     # This is special because it is per-amp.
                     value_temp = np.zeros(valid_pixels.size)
-                    value_temp[use_a] = dg.table['skyvara'][ind]
-                    value_temp[use_b] = dg.table['skyvarb'][ind]
+                    if self.config.use_two_amps:
+                        value_temp[use_a] = dg.table[self.config.skyvar_field + 'a'][ind]
+                        value_temp[use_b] = dg.table[self.config.skyvar_field + 'b'][ind]
+                    else:
+                        value_temp[use] = dg.table[self.config.skyvar_field][ind]
                     value = value_temp[use]
                 elif map_type == 'maglim':
                     # We compute this below from the weights
@@ -344,86 +364,125 @@ class RegionMapper(object):
         if tilename is not None and hpix is not None:
             raise RuntimeError("Must specify one of tilename or hpix.")
 
+        if self.config.use_two_amps:
+            maxbits = len(indices)*2
+        else:
+            maxbits = len(indices)
         region_input_map = healsparse.HealSparseMap.make_empty(nside_coverage=self.nside_coverage_region,
                                                                nside_sparse=self.config.nside,
                                                                dtype=healsparse.WIDE_MASK,
-                                                               wide_mask_maxbits=len(indices)*2)
+                                                               wide_mask_maxbits=maxbits)
 
         # Pre-match mask tables if available
-        expnums = np.unique(dg.table['expnum'][indices])
+        expnums = np.unique(dg.table[self.config.exp_field][indices])
         if dg.streak_table is not None:
             _, streak_b = esutil.numpy_util.match(expnums,
-                                                  dg.streak_table['expnum'])
+                                                  dg.streak_table[self.config.exp_field])
         if dg.bleed_table is not None:
             _, bleed_b = esutil.numpy_util.match(expnums,
-                                                 dg.bleed_table['expnum'])
+                                                 dg.bleed_table[self.config.exp_field])
         if dg.satstar_table is not None:
             _, satstar_b = esutil.numpy_util.match(expnums,
-                                                   dg.satstar_table['expnum'])
+                                                   dg.satstar_table[self.config.exp_field])
 
         metadata = {}
         for i, ind in enumerate(indices):
-            # Everything needs to be done with 2 amps
-            bit_a = i*2
-            bit_b = i*2 + 1
+            if self.config.use_two_amps:
+                # Everything needs to be done with 2 amps
+                bit_a = i*2
+                bit_b = i*2 + 1
 
-            metadata['B%04dCCD' % (bit_a)] = dg.table['ccdnum'][ind]
-            metadata['B%04dCCD' % (bit_b)] = dg.table['ccdnum'][ind]
-            metadata['B%04dEXP' % (bit_a)] = dg.table['expnum'][ind]
-            metadata['B%04dEXP' % (bit_b)] = dg.table['expnum'][ind]
-            metadata['B%04dAMP' % (bit_a)] = 'A'
-            metadata['B%04dAMP' % (bit_b)] = 'B'
-            metadata['B%04dWT' % (bit_a)] = self._compute_weight('a', ind)
-            metadata['B%04dWT' % (bit_b)] = self._compute_weight('b', ind)
+                metadata['B%04dCCD' % (bit_a)] = dg.table[self.config.ccd_field][ind]
+                metadata['B%04dCCD' % (bit_b)] = dg.table[self.config.ccd_field][ind]
+                metadata['B%04dEXP' % (bit_a)] = dg.table[self.config.exp_field][ind]
+                metadata['B%04dEXP' % (bit_b)] = dg.table[self.config.exp_field][ind]
+                metadata['B%04dAMP' % (bit_a)] = 'A'
+                metadata['B%04dAMP' % (bit_b)] = 'B'
+                metadata['B%04dWT' % (bit_a)] = self._compute_weight(self.config.skyvar_field + 'a', ind)
+                metadata['B%04dWT' % (bit_b)] = self._compute_weight(self.config.skyvar_field + 'b', ind)
+            else:
+                bit = i
+
+                metadata['B%04dCCD' % (bit)] = dg.table[self.config.ccd_field][ind]
+                metadata['B%04dEXP' % (bit)] = dg.table[self.config.exp_field][ind]
+                metadata['B%04dWT' % (bit)] = self._compute_weight(self.config.skyvar_field, ind)
 
             wcs = dg.wcs_list[ind]
 
             if wcs is None:
                 continue
 
-            x_coords_a = np.array([self.config.amp_boundary,
-                                   self.config.amp_boundary,
-                                   dg.table['naxis1'][ind] - self.config.border,
-                                   dg.table['naxis1'][ind] - self.config.border])
-            x_coords_b = np.array([self.config.border,
-                                   self.config.border,
-                                   self.config.amp_boundary,
-                                   self.config.amp_boundary])
+            if self.config.use_wcs:
+                # Use the WCS and render the ccd boxes
+                if self.config.use_two_amps:
+                    x_coords_a = np.array([self.config.amp_boundary,
+                                           self.config.amp_boundary,
+                                           dg.table['naxis1'][ind] - self.config.border,
+                                           dg.table['naxis1'][ind] - self.config.border])
+                    x_coords_b = np.array([self.config.border,
+                                           self.config.border,
+                                           self.config.amp_boundary,
+                                           self.config.amp_boundary])
+                else:
+                    x_coords = np.array([self.config.border,
+                                         self.config.border,
+                                         dg.table['naxis1'][ind] - self.config.border,
+                                         dg.table['naxis1'][ind] - self.config.border])
 
-            y_coords = np.array([self.config.border,
-                                 dg.table['naxis2'][ind] - self.config.border,
-                                 dg.table['naxis2'][ind] - self.config.border,
-                                 self.config.border])
+                y_coords = np.array([self.config.border,
+                                     dg.table['naxis2'][ind] - self.config.border,
+                                     dg.table['naxis2'][ind] - self.config.border,
+                                     self.config.border])
 
-            ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
-            ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
+                if self.config.use_two_amps:
+                    ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
+                    ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
 
-            poly_a = healsparse.Polygon(ra=ra_a, dec=dec_a, value=[bit_a])
-            poly_b = healsparse.Polygon(ra=ra_b, dec=dec_b, value=[bit_b])
+                    poly_a = healsparse.Polygon(ra=ra_a, dec=dec_a, value=[bit_a])
+                    poly_b = healsparse.Polygon(ra=ra_b, dec=dec_b, value=[bit_b])
+                else:
+                    ra, dec = wcs.image2sky(x_coords, y_coords)
+
+                    poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
+            else:
+                # Don't use the WCS and use the bounding box specified in the table.
+                # This is only possible with 1-amp mode.
+                ra = np.array([dg.table[field][ind] for field in self.config.ra_corner_fields])
+                dec = np.array([dg.table[field][ind] for field in self.config.dec_corner_fields])
+                poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
 
             # Check if we have additional masking
             if (dg.streak_table is not None or dg.bleed_table is not None or
                     dg.satstar_table is not None):
-                poly_map_a = poly_a.get_map_like(region_input_map)
-                poly_map_b = poly_b.get_map_like(region_input_map)
+                if self.config.use_two_amps:
+                    poly_map_a = poly_a.get_map_like(region_input_map)
+                    poly_map_b = poly_b.get_map_like(region_input_map)
+                else:
+                    poly_map = poly.get_map_like(region_input_map)
 
                 mask_reg_list = []
 
                 if dg.streak_table is not None:
-                    sinds, = np.where((dg.streak_table['expnum'][streak_b] == dg.table['expnum'][ind]) &
-                                      (dg.streak_table['ccdnum'][streak_b] == dg.table['ccdnum'][ind]))
+                    sinds, = np.where((dg.streak_table[self.config.exp_field][streak_b] ==
+                                       dg.table[self.config.exp_field][ind]) &
+                                      (dg.streak_table[self.config.ccd_field][streak_b] ==
+                                       dg.table[self.config.ccd_field][ind]))
                     for sind in streak_b[sinds]:
                         mask_reg_list.append(self._get_maskpoly_from_row(dg.streak_table[sind]))
 
                 if dg.bleed_table is not None:
-                    binds, = np.where((dg.bleed_table['expnum'][bleed_b] == dg.table['expnum'][ind]) &
-                                      (dg.bleed_table['ccdnum'][bleed_b] == dg.table['ccdnum'][ind]))
+                    binds, = np.where((dg.bleed_table[self.config.exp_field][bleed_b] ==
+                                       dg.table[self.config.exp_field][ind]) &
+                                      (dg.bleed_table[self.config.ccd_field][bleed_b] ==
+                                       dg.table[self.config.ccd_field][ind]))
                     for bind in bleed_b[binds]:
                         mask_reg_list.append(self._get_maskpoly_from_row(dg.bleed_table[bind]))
 
                 if dg.satstar_table is not None:
-                    sinds, = np.where((dg.satstar_table['expnum'][satstar_b] == dg.table['expnum'][ind]) &
-                                      (dg.satstar_table['ccdnum'][satstar_b] == dg.table['ccdnum'][ind]))
+                    sinds, = np.where((dg.satstar_table[self.config.exp_field][satstar_b] ==
+                                       dg.table[self.config.exp_field][ind]) &
+                                      (dg.satstar_table[self.config.ccd_field][satstar_b] ==
+                                       dg.table[self.config.ccd_field][ind]))
                     for sind in satstar_b[sinds]:
                         mask_reg_list.append(self._get_maskcircle_from_row(dg.satstar_table[sind]))
 
@@ -432,27 +491,36 @@ class RegionMapper(object):
                                                                dtype=np.uint8)
                 healsparse.realize_geom(mask_reg_list, mask_map)
 
-                poly_map_a.apply_mask(mask_map)
-                poly_map_b.apply_mask(mask_map)
-                pixels_a = poly_map_a.valid_pixels
-                pixels_b = poly_map_b.valid_pixels
+                if self.config.use_two_amps:
+                    poly_map_a.apply_mask(mask_map)
+                    poly_map_b.apply_mask(mask_map)
+                    pixels_a = poly_map_a.valid_pixels
+                    pixels_b = poly_map_b.valid_pixels
+                else:
+                    poly_map.apply_mask(mask_map)
+                    pixels = poly_map.valid_pixels
 
             else:
                 # With no masking we can do a slightly faster version direct
                 # with the pixels
-                pixels_a = poly_a.get_pixels(nside=self.config.nside)
-                pixels_b = poly_b.get_pixels(nside=self.config.nside)
+                if self.config.use_two_amps:
+                    pixels_a = poly_a.get_pixels(nside=self.config.nside)
+                    pixels_b = poly_b.get_pixels(nside=self.config.nside)
+                else:
+                    pixels = poly.get_pixels(nside=self.config.nside)
 
-            # Check for bad amps
-            if int(dg.table['ccdnum'][ind]) in list(self.config.bad_amps):
-                ba = self.config.bad_amps[int(dg.table['ccdnum'][ind])]
-                for b in ba:
-                    if b.lower() == 'a':
-                        pixels_a = np.array([], dtype=np.int64)
-                    elif b.lower() == 'b':
-                        pixels_b = np.array([], dtype=np.int64)
+            # Check for bad amps -- only in two amp mode
+            if self.config.use_two_amps:
+                if int(dg.table[self.config.ccd_field][ind]) in list(self.config.bad_amps):
+                    ba = self.config.bad_amps[int(dg.table[self.config.ccd_field][ind])]
+                    for b in ba:
+                        if b.lower() == 'a':
+                            pixels_a = np.array([], dtype=np.int64)
+                        elif b.lower() == 'b':
+                            pixels_b = np.array([], dtype=np.int64)
 
-            if tilename is not None:
+            # tilename implies DES, and use two amps
+            if tilename is not None and self.config.use_two_amps:
                 tind, = np.where(dg.tile_info['tilename'] == tilename)
                 for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
                     pixra, pixdec = hp.pix2ang(self.config.nside, pixels, lonlat=True, nest=True)
@@ -479,7 +547,11 @@ class RegionMapper(object):
                 npixels = 2**bit_shift
                 pixel_min = hpix*npixels
                 pixel_max = (hpix + 1)*npixels - 1
-                for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
+                if self.config.use_two_amps:
+                    for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
+                        ok = ((pixels >= pixel_min) & (pixels <= pixel_max))
+                        region_input_map.set_bits_pix(pixels[ok], [bit])
+                else:
                     ok = ((pixels >= pixel_min) & (pixels <= pixel_max))
                     region_input_map.set_bits_pix(pixels[ok], [bit])
 
@@ -487,18 +559,18 @@ class RegionMapper(object):
 
         return region_input_map
 
-    def _compute_weight(self, ampname, ind):
+    def _compute_weight(self, skyvar_field, ind):
         """
         Compute the weight from a given amp
 
         Parameters
         ----------
-        ampname : `str`
-           Amp name, 'a' or 'b'
+        skyvar_field : `str`
+           Name of the field for the "skyvar" including amp name
         ind : `int`
            Index in table to compute
         """
-        return 1.0/(dg.table['skyvar' + ampname][ind] *
+        return 1.0/(dg.table[skyvar_field][ind] *
                     100.**((self.config.zp_global -
                            dg.table[self.config.magzp_field][ind])/2.5))
 
@@ -516,10 +588,12 @@ class RegionMapper(object):
         maglims : `np.ndarray`
            Array of mag limits
         """
-        maglims = (self.config.zp_global -
-                   2.5*np.log10(self.config.maglim_nsig*np.sqrt(np.pi) *
-                                self.config.maglim_aperture/(2.*self.config.arcsec_per_pix)) -
-                   2.5*np.log10(1./np.sqrt(weights)))
+        maglims = self.config.zp_global - 2.5*np.log10(1./np.sqrt(weights))
+
+        # Aperture is diameter in arcseconds
+        area = np.pi*((self.config.maglim_aperture/self.config.arcsec_per_pix)/2.0)**2.0
+
+        maglims -= 2.5*np.log10(self.config.maglim_nsig*np.sqrt(area))
         return maglims
 
     def _compute_sblimits(self, weights):

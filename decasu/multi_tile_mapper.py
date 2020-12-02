@@ -64,7 +64,7 @@ class MultiTileMapper(object):
         """
         # Get the coadd tile information
         decasu_globals.tile_info = fitsio.read(coaddtilefile, ext=1, lower=True, trim_strings=True)
-        use, = np.where(decasu_globals.tile_info['band'] == band)
+        use, = np.where(decasu_globals.tile_info[self.config.band_field] == band)
         decasu_globals.tile_info = decasu_globals.tile_info[use]
 
         # Confirm that we have a unique list of tiles
@@ -164,19 +164,22 @@ class MultiTileMapper(object):
             table = decasu_globals.table
 
             # Read in tables
-            expnums = np.unique(table['expnum'])
+            expnums = np.unique(table[self.config.exp_field])
             if len(bleedtrailfiles) > 0:
                 print('Reading bleed trail table...')
                 decasu_globals.bleed_table = read_maskfiles(expnums,
-                                                            bleedtrailfiles)
+                                                            bleedtrailfiles,
+                                                            self.config.exp_field)
             if len(streakfiles) > 0:
                 print('Reading streak table...')
                 decasu_globals.streak_table = read_maskfiles(expnums,
-                                                             streakfiles)
+                                                             streakfiles,
+                                                             self.config.exp_field)
             if len(starfiles) > 0:
                 print('Reading saturated star table...')
                 decasu_globals.satstar_table = read_maskfiles(expnums,
-                                                              starfiles)
+                                                              starfiles,
+                                                              self.config.exp_field)
                 gd, = np.where(decasu_globals.satstar_table['radius'] < self.config.satstar_maxrad)
                 decasu_globals.satstar_table = decasu_globals.satstar_table[gd]
 

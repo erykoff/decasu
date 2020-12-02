@@ -1,0 +1,34 @@
+outbase: 'testing'
+nside: 16384
+map_types:
+  nexp: ['sum']
+  exptime: ['sum']
+  airmass: ['wmean', 'min', 'max']
+  seeing: ['wmean']
+  maglim: ['wmean']
+  dcr_dra: ['wmean']
+  dcr_ddec: ['wmean']
+  dcr_e1: ['wmean']
+  dcr_e2: ['wmean']
+  sigma_sky: ['wmean']
+  skylevel: ['wmean', 'wmean-scaled']
+use_two_amps: False
+arcsec_per_pix: 0.17
+maglim_aperture: 4.08
+maglim_nsig: 5.0
+zp_global: 27.0
+magzp_field: "magzero"
+exp_field: "visit"
+ccd_field: "ccd"
+band_field: "filter"
+mjd_field: "mjd"
+skyvar_field: "skylevel"
+bad_amps: {}
+extra_fields: {}
+band_replacement: {'i2': 'i'}
+use_wcs: False
+ra_corner_fields: ['llcra', 'lrcra', 'urcra', 'ulcra']
+dec_corner_fields: ['llcdecl', 'lrcdecl', 'urcdecl', 'ulcdecl']
+latitude: 19.8230
+longitude: -155.4694
+elevation: 4205.0

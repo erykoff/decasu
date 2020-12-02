@@ -68,7 +68,7 @@ class SimpleHealpixMapper(object):
         else:
             table = table_in
 
-        use, = np.where(table['band'] == band)
+        use, = np.where(table[self.config.band_field] == band)
         print('Found %d ccds with %s band' % (use.size, band))
         self.table = table[use]
 
@@ -127,6 +127,8 @@ class SimpleHealpixMapper(object):
             try:
                 nexp_map[poly.get_pixels(nside=nexp_map.nside_sparse)] += 1
             except ValueError:
-                print('Bad WCS mapping for %d/%d' % (self.table['expnum'][i], self.table['ccdnum'][i]))
+                print('Bad WCS mapping for %d/%d' %
+                      (self.table[self.config.exp_field][i],
+                       self.table[self.config.ccd_field][i]))
 
         return nexp_map

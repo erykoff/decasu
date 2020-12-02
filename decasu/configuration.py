@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List
 import yaml
 
 from .utils import op_code_to_str
@@ -16,6 +16,18 @@ def _default_extra_fields():
 
 def _default_bad_amps():
     return {31: ['a']}
+
+
+def _default_band_replacement():
+    return {}
+
+
+def _default_ra_corner_fields():
+    return []
+
+
+def _default_dec_corner_fields():
+    return []
 
 
 @dataclass
@@ -33,14 +45,24 @@ class Configuration(object):
     nside_run: int = 8
     ncore: int = 1
     extra_fields: Dict[str, str] = field(default_factory=_default_extra_fields)
+    band_replacement: Dict[str, str] = field(default_factory=_default_band_replacement)
     border: int = 15
     amp_boundary: int = 1024
+    use_two_amps: bool = True
+    use_wcs: bool = True
+    ra_corner_fields: List[str] = field(default_factory=_default_ra_corner_fields)
+    dec_corner_fields: List[str] = field(default_factory=_default_dec_corner_fields)
     arcsec_per_pix: float = 0.263
-    maglim_aperture: float = 2.0
+    maglim_aperture: float = 2.0 # Diameter in arcseconds
     maglim_nsig: float = 10.0
     zp_global: float = 30.0
     zp_sign_swap: bool = False
     magzp_field: str = 'mag_zero'
+    exp_field: str = 'expnum'
+    ccd_field: str = 'ccdnum'
+    band_field: str = 'band'
+    mjd_field: str = 'mjd_obs'
+    skyvar_field: str = 'skyvar'
     bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
     latitude: float = -30.1690
     longitude: float = -70.8063

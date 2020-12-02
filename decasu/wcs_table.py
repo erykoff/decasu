@@ -55,18 +55,24 @@ class WcsTableBuilder(object):
             for field in added_fields:
                 table[field][:] = self.config.extra_fields[field]
 
+            if len(config.band_replacement) > 0:
+                # Replace bands as configured.
+                for b in config.band_replacement:
+                    test, = np.where(table[self.config.band_field] == b)
+                    table[self.config.band_field][test] = config.band_replacement[b]
+
             if len(bands) == 0:
                 # Use them all, record the bands here
-                self.bands = np.unique(table['band'])
+                self.bands = np.unique(table[self.config.band_field])
             else:
                 self.bands = bands
 
                 use = None
                 for b in bands:
                     if use is None:
-                        use = (table['band'] == b)
+                        use = (table[self.config.band_field] == b)
                     else:
-                        use |= (table['band'] == b)
+                        use |= (table[self.config.band_field] == b)
                 table = table[use]
 
             if self.config.zp_sign_swap:
@@ -84,7 +90,7 @@ class WcsTableBuilder(object):
                             lon=config.longitude*units.degree,
                             height=config.elevation*units.m)
 
-        t = Time(fulltable['mjd_obs'], format='mjd', location=loc)
+        t = Time(fulltable[config.mjd_field], format='mjd', location=loc)
         lst = t.sidereal_time('apparent')
         fulltable['decasu_lst'] = lst.to_value(units.degree)
         print('...done.')
@@ -111,14 +117,23 @@ class WcsTableBuilder(object):
         # Link to global table
         self.table = decasu_globals.table
 
-        wcs = esutil.wcsutil.WCS(self.table[row])
+        if self.config.use_wcs:
+            wcs = esutil.wcsutil.WCS(self.table[row])
 
-        ra_co, dec_co = wcs.image2sky(np.array([0.0, 0.0,
-                                                self.table['naxis1'][row], self.table['naxis1'][row]]),
-                                      np.array([0.0, self.table['naxis2'][row],
-                                                self.table['naxis2'][row], 0.0]))
-        center = wcs.image2sky([self.table['naxis1'][row]/2.],
-                               [self.table['naxis2'][row]/2.])
+            ra_co, dec_co = wcs.image2sky(np.array([0.0, 0.0,
+                                                    self.table['naxis1'][row], self.table['naxis1'][row]]),
+                                          np.array([0.0, self.table['naxis2'][row],
+                                                    self.table['naxis2'][row], 0.0]))
+            center = wcs.image2sky([self.table['naxis1'][row]/2.],
+                                   [self.table['naxis2'][row]/2.])
+        else:
+            # Don't set wcs to None because that has meaning that this
+            # is a bad ccd
+            wcs = 0
+
+            ra_co = np.array([self.table[field][row] for field in self.config.ra_corner_fields])
+            dec_co = np.array([self.table[field][row] for field in self.config.dec_corner_fields])
+            center = [np.mean(ra_co), np.mean(dec_co)]
 
         if self.compute_pixels:
             vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
