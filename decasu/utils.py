@@ -100,7 +100,7 @@ def op_str_to_code(op_str):
     return op_code
 
 
-def read_maskfiles(expnums, maskfiles):
+def read_maskfiles(expnums, maskfiles, exp_field):
     """
     Read a list of mask files, cutting to the specific expnums.
 
@@ -139,7 +139,7 @@ def read_maskfiles(expnums, maskfiles):
                 print("Removing %d regions of zero extent." % (subtable.size - gd.size))
                 subtable = subtable[gd]
 
-        a, b = esutil.numpy_util.match(expnums, subtable['expnum'])
+        a, b = esutil.numpy_util.match(expnums, subtable[exp_field])
         if masktable is None:
             masktable = subtable[b]
         else:
