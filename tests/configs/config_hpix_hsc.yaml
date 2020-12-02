@@ -12,6 +12,7 @@ map_types:
   dcr_e2: ['wmean']
   sigma_sky: ['wmean']
   skylevel: ['wmean', 'wmean-scaled']
+  weight: ['sum']
 use_two_amps: False
 arcsec_per_pix: 0.17
 maglim_aperture: 4.08
@@ -24,6 +25,7 @@ band_field: "filter"
 mjd_field: "mjd"
 skyvar_field: "skylevel"
 bad_amps: {}
+bad_ccds: [9]
 extra_fields: {}
 band_replacement: {'i2': 'i'}
 use_wcs: False

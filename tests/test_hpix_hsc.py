@@ -46,6 +46,7 @@ class HpixHscTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['skylevel_wmean'] = [273.0, 1604.0, 'float64']
         expected_dict['skylevel_wmean-scaled'] = [7.2, 22.1, 'float64']
         expected_dict['sigma_sky_wmean'] = [8.4, 140.0, 'float64']
+        expected_dict['weight_sum'] = [0.70, 48.9, 'float64']
 
         self.check_expected_maps_hpix(expected_dict, 8, 277, band)
 
@@ -65,6 +66,7 @@ class HpixHscTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['skylevel_wmean'] = [264.0, 1604.0, 'float64']
         expected_dict['skylevel_wmean-scaled'] = [6.9, 23.7, 'float64']
         expected_dict['sigma_sky_wmean'] = [8.4, 140.0, 'float64']
+        expected_dict['weight_sum'] = [0.65, 52.2, 'float64']
 
         self.check_expected_maps_consolidated(expected_dict, band)
 

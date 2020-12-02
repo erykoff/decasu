@@ -166,6 +166,8 @@ class RegionMapper(object):
         any_weights = False
         any_scales = False
         for i, map_type in enumerate(self.config.map_types.keys()):
+            if map_type == 'weight':
+                any_weights = True
             for op in map_operation_list[i]:
                 if op != OP_NONE:
                     any_to_compute = True
@@ -254,6 +256,9 @@ class RegionMapper(object):
                 elif map_type == 'sblim':
                     # We compute this below from the weights
                     value = 0.0
+                elif map_type == 'weight':
+                    # This is the weights.
+                    value = pixel_weights
                 elif map_type == 'coverage':
                     continue
                 elif map_type == 'airmass':
@@ -317,8 +322,11 @@ class RegionMapper(object):
                     elif map_type == 'sblim':
                         sblims = self._compute_sblimits(weights[valid_pixels_use])
                         map_values_list[i][valid_pixels_use, j] = sblims
+                    elif map_type == 'weight':
+                        map_values_list[i][valid_pixels_use, j] = weights[valid_pixels_use]
                     else:
                         map_values_list[i][valid_pixels_use, j] /= weights[valid_pixels_use]
+
                 fname = map_fname_list[i][j]
 
                 if map_type == 'coverage':
@@ -332,6 +340,7 @@ class RegionMapper(object):
                                                             nside_sparse=self.config.nside,
                                                             dtype=map_values_list[i][:, j].dtype)
                     m[valid_pixels[valid_pixels_use]] = map_values_list[i][valid_pixels_use, j]
+
                 if not os.path.isfile(fname) or clobber:
                     m.write(fname, clobber=clobber)
 
@@ -518,6 +527,13 @@ class RegionMapper(object):
                             pixels_a = np.array([], dtype=np.int64)
                         elif b.lower() == 'b':
                             pixels_b = np.array([], dtype=np.int64)
+
+            if int(dg.table[self.config.ccd_field][ind]) in self.config.bad_ccds:
+                if self.config.use_two_amps:
+                    pixels_a = np.array([], dtype=np.int64)
+                    pixels_b = np.array([], dtype=np.int64)
+                else:
+                    pixels = np.array([], dtype=np.int64)
 
             # tilename implies DES, and use two amps
             if tilename is not None and self.config.use_two_amps:

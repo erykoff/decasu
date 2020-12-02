@@ -18,6 +18,10 @@ def _default_bad_amps():
     return {31: ['a']}
 
 
+def _default_bad_ccds():
+    return []
+
+
 def _default_band_replacement():
     return {}
 
@@ -64,6 +68,7 @@ class Configuration(object):
     mjd_field: str = 'mjd_obs'
     skyvar_field: str = 'skyvar'
     bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
+    bad_ccds: List[int] = field(default_factory=_default_bad_ccds)
     latitude: float = -30.1690
     longitude: float = -70.8063
     elevation: float = 2200.0
