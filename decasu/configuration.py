@@ -53,7 +53,7 @@ class Configuration(object):
     ra_corner_fields: List[str] = field(default_factory=_default_ra_corner_fields)
     dec_corner_fields: List[str] = field(default_factory=_default_dec_corner_fields)
     arcsec_per_pix: float = 0.263
-    maglim_aperture: float = 2.0 # Diameter in arcseconds
+    maglim_aperture: float = 2.0  # Diameter in arcseconds
     maglim_nsig: float = 10.0
     zp_global: float = 30.0
     zp_sign_swap: bool = False
