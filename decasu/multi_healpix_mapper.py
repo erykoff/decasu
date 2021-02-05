@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from multiprocessing import Pool
+import multiprocessing
 import time
 import esutil
 import glob
@@ -55,7 +55,8 @@ class MultiHealpixMapper(object):
 
         print('Generating WCSs...')
         t = time.time()
-        pool = Pool(processes=self.ncores)
+        mp_ctx = multiprocessing.get_context("fork")
+        pool = mp_ctx.Pool(processes=self.ncores)
         wcs_list, pixel_list, center_list = zip(*pool.map(wcs_builder,
                                                           range(len(decasu_globals.table)),
                                                           chunksize=1))
@@ -102,7 +103,8 @@ class MultiHealpixMapper(object):
 
         print('Generating maps for %d pixels...' % (len(runpix_list)))
         t = time.time()
-        pool = Pool(processes=self.ncores)
+        mp_ctx = multiprocessing.get_context("fork")
+        pool = mp_ctx.Pool(processes=self.ncores)
         pool.starmap(region_mapper, values, chunksize=1)
         pool.close()
         pool.join()
@@ -140,7 +142,8 @@ class MultiHealpixMapper(object):
         values = zip(fname_list, mapfiles_list)
 
         t = time.time()
-        pool = Pool(processes=self.ncores)
+        mp_ctx = multiprocessing.get_context("fork")
+        pool = mp_ctx.Pool(processes=self.ncores)
         pool.starmap(hpix_consolidator, values, chunksize=1)
         pool.close()
         pool.join()
