@@ -8,6 +8,9 @@ import decasu
 import decasu_test_base
 
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
 class HpixHscTestCase(decasu_test_base.DecasuTestBase):
     """
     Tests for running a healpixels using the HSC code.
@@ -18,12 +21,12 @@ class HpixHscTestCase(decasu_test_base.DecasuTestBase):
         """
         band = 'r'
 
-        self.test_dir = tempfile.mkdtemp(dir='./', prefix='TestHpixHSC-')
+        self.test_dir = tempfile.mkdtemp(dir=ROOT, prefix='TestHpixHSC-')
 
-        config = decasu.Configuration.load_yaml(os.path.join('./', 'configs',
+        config = decasu.Configuration.load_yaml(os.path.join(ROOT, 'configs',
                                                              'config_hpix_hsc.yaml'))
 
-        imagefile = os.path.join('./', 'data', 'S16A_WIDE_frames_test.fits.gz')
+        imagefile = os.path.join(ROOT, 'data', 'S16A_WIDE_frames_test.fits.gz')
 
         mapper = decasu.MultiHealpixMapper(config, self.test_dir, ncores=1)
         mapper(imagefile, bands=[band],

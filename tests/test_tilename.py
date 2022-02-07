@@ -8,6 +8,9 @@ import decasu
 import decasu_test_base
 
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
 class TilenameTestCase(decasu_test_base.DecasuTestBase):
     """
     Tests for running a single tilename.
@@ -19,16 +22,16 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         tilenames = ['DES0003-5457', 'DES2358-5457']
         band = 'i'
 
-        self.test_dir = tempfile.mkdtemp(dir='./', prefix='TestTilename-')
+        self.test_dir = tempfile.mkdtemp(dir=ROOT, prefix='TestTilename-')
 
-        config = decasu.Configuration.load_yaml(os.path.join('./', 'configs',
+        config = decasu.Configuration.load_yaml(os.path.join(ROOT, 'configs',
                                                              'config_tilename.yaml'))
 
-        coaddtilefile = os.path.join('./', 'data', 'y3a2_testing_coadd_tiles_and_geom.fits.gz')
-        imagefile = os.path.join('./', 'data', 'y3a2_testing_coadd_input_image_table.fits.gz')
-        bleedtrailfile = os.path.join('./', 'data', 'y3a2_testing_bleedtrails.fits.gz')
-        streakfile = os.path.join('./', 'data', 'y3a2_testing_streaks.fits.gz')
-        starfile = os.path.join('./', 'data', 'y3a2_testing_satstars.fits.gz')
+        coaddtilefile = os.path.join(ROOT, 'data', 'y3a2_testing_coadd_tiles_and_geom.fits.gz')
+        imagefile = os.path.join(ROOT, 'data', 'y3a2_testing_coadd_input_image_table.fits.gz')
+        bleedtrailfile = os.path.join(ROOT, 'data', 'y3a2_testing_bleedtrails.fits.gz')
+        streakfile = os.path.join(ROOT, 'data', 'y3a2_testing_streaks.fits.gz')
+        starfile = os.path.join(ROOT, 'data', 'y3a2_testing_satstars.fits.gz')
 
         mapper = decasu.MultiTileMapper(config, self.test_dir, ncores=1)
         mapper(coaddtilefile, [imagefile], band, coaddtiles=tilenames,

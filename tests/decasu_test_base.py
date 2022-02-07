@@ -8,6 +8,9 @@ import shutil
 import healsparse
 
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
 class DecasuTestBase(unittest.TestCase):
     def setUp(self):
         self.test_dir = None
@@ -101,7 +104,7 @@ class DecasuTestBase(unittest.TestCase):
            Compute delta instead of ratio
         """
         # Read in the mangle map
-        mangle_map = healsparse.HealSparseMap.read(os.path.join('./', 'data',
+        mangle_map = healsparse.HealSparseMap.read(os.path.join(ROOT, 'data',
                                                                 '%s_%s.hs' %
                                                                 (manglebase, mapstr)))
         nside_mangle = mangle_map.nside_sparse
