@@ -1,10 +1,11 @@
 outbase: 'testing'
 nside: 16384
+argminmax_field: 'skysigma'
 map_types:
   coverage: ['sum']
   nexp: ['sum']
   exptime: ['sum', 'sum-scaled']
-  airmass: ['wmean', 'min', 'max']
+  airmass: ['wmean', 'min', 'max', 'argmin', 'argmax']
   dcr_dra: ['wmean']
   dcr_ddec: ['wmean']
   dcr_e1: ['wmean']
@@ -15,4 +16,3 @@ map_types:
   skybrite: ['wmean', 'wmean-scaled', 'min-scaled', 'max-scaled', 'mean', 'mean-scaled']
   skyvar: ['wmean', 'min']
   fwhm: ['wmean']
-

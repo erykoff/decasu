@@ -15,6 +15,10 @@ OP_MEAN_SCALED = 8
 OP_WMEAN_SCALED = 9
 OP_MIN_SCALED = 10
 OP_MAX_SCALED = 11
+OP_ARGMIN = 12
+OP_ARGMAX = 13
+OP_ARGMIN_SCALED = 14
+OP_ARGMAX_SCALED = 15
 
 
 valid_map_types_basic = ['nexp']
@@ -56,6 +60,14 @@ def op_code_to_str(op_code):
         op_str = 'min-scaled'
     elif op_code == OP_MAX_SCALED:
         op_str = 'max-scaled'
+    elif op_code == OP_ARGMIN:
+        op_str = 'argmin'
+    elif op_code == OP_ARGMAX:
+        op_str = 'argmax'
+    elif op_code == OP_ARGMIN_SCALED:
+        op_str = 'argmin-scaled'
+    elif op_code == OP_ARGMAX_SCALED:
+        op_str = 'argmax-scaled'
 
     return op_str
 
@@ -96,6 +108,14 @@ def op_str_to_code(op_str):
         op_code = OP_MIN_SCALED
     elif op_str == 'max-scaled':
         op_code = OP_MAX_SCALED
+    elif op_str == 'argmin':
+        op_code = OP_ARGMIN
+    elif op_str == 'argmax':
+        op_code = OP_ARGMAX
+    elif op_str == 'argmin-scaled':
+        op_code = OP_ARGMIN_SCALED
+    elif op_str == 'argmax-scaled':
+        op_code = OP_ARGMAX_SCALED
 
     return op_code
 
