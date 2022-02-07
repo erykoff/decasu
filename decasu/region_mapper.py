@@ -9,7 +9,8 @@ import coord
 
 from .utils import op_str_to_code
 from .utils import OP_NONE, OP_SUM, OP_MEAN, OP_WMEAN, OP_MIN, OP_MAX
-from .utils import OP_SUM_SCALED, OP_MEAN_SCALED, OP_WMEAN_SCALED, OP_MIN_SCALED, OP_MAX_SCALED
+from .utils import (OP_SUM_SCALED, OP_MEAN_SCALED, OP_WMEAN_SCALED, OP_MIN_SCALED, OP_MAX_SCALED,
+                    OP_ARGMIN, OP_ARGMIN_SCALED, OP_ARGMAX, OP_ARGMAX_SCALED)
 from . import decasu_globals as dg
 
 
@@ -112,6 +113,8 @@ class RegionMapper(object):
         map_operation_list = []
         map_fname_list = []
         has_zenith_quantity = False
+        argmin_values = None
+        argmax_values = None
 
         for map_type in self.config.map_types.keys():
             if map_type == 'airmass' or map_type.startswith('dcr') or map_type == 'parallactic':
@@ -156,6 +159,10 @@ class RegionMapper(object):
                         op_code == OP_MIN_SCALED or op_code == OP_MAX_SCALED:
                     # We use fmin and fmax, so nans get overwritten
                     map_values[:, j] = np.nan
+                elif op_code == OP_ARGMIN or op_code == OP_ARGMIN_SCALED:
+                    argmin_values = np.zeros(npixels, dtype=np.float64) + 1e300
+                elif op_code == OP_ARGMAX or op_code == OP_ARGMAX_SCALED:
+                    argmax_values = np.zeros(npixels, dtype=np.float64) - 1e300
 
             map_values_list.append(map_values)
             map_operation_list.append(op_list)
@@ -301,6 +308,22 @@ class RegionMapper(object):
                     elif op == OP_MAX_SCALED:
                         map_values_list[i][use, j] = np.fmax(map_values_list[i][use, j],
                                                              calibscale*value)
+                    elif op == OP_ARGMIN or op == OP_ARGMIN_SCALED:
+                        comp_value = dg.table[self.config.argminmax_field][ind]
+                        lower = (comp_value < argmin_values[use])
+                        argmin_values[use[lower]] = comp_value
+                        if op == OP_ARGMIN:
+                            map_values_list[i][use[lower], j] = value
+                        else:
+                            map_values_list[i][use[lower], j] = calibscale*value
+                    elif op == OP_ARGMAX or op == OP_ARGMAX_SCALED:
+                        comp_value = dg.table[self.config.argminmax_field][ind]
+                        higher = (comp_value > argmax_values[use])
+                        argmax_values[use[higher]] = comp_value
+                        if op == OP_ARGMAX:
+                            map_values_list[i][use[higher], j] = value
+                        else:
+                            map_values_list[i][use[higher], j] = calibscale*value
 
         # Finish computations and save
         valid_pixels_use, = np.where(nexp > 0)

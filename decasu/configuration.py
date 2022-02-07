@@ -73,6 +73,7 @@ class Configuration(object):
     longitude: float = -70.8063
     elevation: float = 2200.0
     satstar_maxrad: float = 400.0
+    argminmax_field: str = ''
 
     def __post_init__(self):
         self._validate()
