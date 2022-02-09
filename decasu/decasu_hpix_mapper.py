@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 import argparse
-import decasu
+
+from .configuration import Configuration
+from .simple_healpix_mapper import SimpleHealpixMapper
+from .multi_healpix_mapper import MultiHealpixMapper
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Make survey property maps for DECam using healpix regions')
 
     parser.add_argument('-c', '--configfile', action='store', type=str, required=True,
@@ -26,7 +27,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    config = decasu.Configuration.load_yaml(args.configfile)
+    config = Configuration.load_yaml(args.configfile)
 
     if args.bands is None:
         bands = []
@@ -39,9 +40,9 @@ if __name__ == '__main__':
         pixels = [int(p) for p in args.pixels.split(',')]
 
     if args.simple:
-        mapper = decasu.SimpleHealpixMapper(config)
+        mapper = SimpleHealpixMapper(config)
         mapper(args.infile, 'blah.hs', bands[0])
     else:
-        mapper = decasu.MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
+        mapper = MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
         mapper(args.infile, bands=bands, pixels=pixels,
                clear_intermediate_files=not args.keep_intermediate_files)

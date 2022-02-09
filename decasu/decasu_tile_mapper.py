@@ -1,9 +1,10 @@
-#!/usr/bin/env python
-
 import argparse
-import decasu
 
-if __name__ == '__main__':
+from .configuration import Configuration
+from .multi_tile_mapper import MultiTileMapper
+
+
+def main():
     parser = argparse.ArgumentParser(description='Make survey property maps for DECam using coadd tiles')
 
     parser.add_argument('-c', '--configfile', action='store', type=str, required=True,
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    config = decasu.Configuration.load_yaml(args.configfile)
+    config = Configuration.load_yaml(args.configfile)
 
     band = args.band
 
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     else:
         coaddtiles = args.coaddtiles.split(',')
 
-    mapper = decasu.MultiTileMapper(config, args.outputpath, ncores=args.ncores)
+    mapper = MultiTileMapper(config, args.outputpath, ncores=args.ncores)
     mapper(args.coaddtilefile, imagefiles, band, coaddtiles=coaddtiles,
            bleedtrailfiles=bleedtrailfiles, streakfiles=streakfiles,
            starfiles=starfiles, clear_intermediate_files=not args.keep_intermediate_files,
