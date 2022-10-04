@@ -39,7 +39,7 @@ jobs:
       shell: bash -l {0}
       run: |
         git clone https://github.com/${GITHUB_REPOSITORY}
-        cd supreme
+        cd decasu
         git fetch origin ${GITHUB_REF}:TESTING
         git checkout TESTING
         echo "cd ${PWD}" >> $HOME/.bashrc
