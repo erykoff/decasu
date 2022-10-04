@@ -34,11 +34,11 @@ jobs:
     - name: Install dependencies
       run: |
         export PATH="$CONDA/bin:$PATH"
-        mamba create -q -n testenv python=${{ matrix.python-version }} numpy healpy astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
-        source activate testenv
+        mamba install -q -n base python=${{ matrix.python-version }} numpy healpy astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
+        source activate base
         pip install --no-deps .
     - name: Test with pytest
       run: |
         export PATH="$CONDA/bin:$PATH"
-        source activate testenv
+        source activate base
         pytest
