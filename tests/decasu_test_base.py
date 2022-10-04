@@ -1,7 +1,7 @@
 import unittest
 import os
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 import numpy.testing as testing
 import shutil
 
@@ -120,8 +120,8 @@ class DecasuTestBase(unittest.TestCase):
         values_mangle = mangle_map[vpix_decasu]
         values_decasu = decasu_map_dg[vpix_decasu]*scale
 
-        gd, = np.where(values_mangle > hp.UNSEEN)
-        gd2, = np.where(decasu_map_dg[vpix_mangle] > hp.UNSEEN)
+        gd, = np.where(values_mangle > hpg.UNSEEN)
+        gd2, = np.where(decasu_map_dg[vpix_mangle] > hpg.UNSEEN)
 
         # Check that this is above a certain threshold...
         # This first test checks that most of the pixels in the decasu

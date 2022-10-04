@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         export PATH="$CONDA/bin:$PATH"
-        conda create -q -n testenv python=${{ matrix.python-version }} numpy healpy astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
+        conda create -q -n testenv python=${{ matrix.python-version }} numpy hpgeom astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
         source activate testenv
         pip install --no-deps .
     - name: Lint with flake8

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import healsparse
-import healpy as hp
+import hpgeom as hpg
 import esutil
 import time
 
@@ -562,7 +562,7 @@ class RegionMapper(object):
             if tilename is not None and self.config.use_two_amps:
                 tind, = np.where(dg.tile_info['tilename'] == tilename)
                 for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
-                    pixra, pixdec = hp.pix2ang(self.config.nside, pixels, lonlat=True, nest=True)
+                    pixra, pixdec = hpg.pixel_to_angle(self.config.nside, pixels)
                     if dg.tile_info['crossra0'][tind] == 'Y':
                         # Special for cross-ra0, where uramin will be very large
                         uramin = dg.tile_info['uramin'][tind] - 360.0

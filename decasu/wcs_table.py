@@ -1,5 +1,5 @@
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 import fitsio
 import esutil
 
@@ -136,9 +136,8 @@ class WcsTableBuilder(object):
             center = [np.mean(ra_co), np.mean(dec_co)]
 
         if self.compute_pixels:
-            vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
             try:
-                pixels = hp.query_polygon(self.config.nside_run, vertices, nest=True, inclusive=True, fact=16)
+                pixels = hpg.query_polygon(self.config.nside_run, ra_co, dec_co, inclusive=True, fact=16)
             except RuntimeError:
                 # Bad WCS
                 pixels = np.array([], dtype=np.int64)

@@ -1,5 +1,5 @@
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 import fitsio
 import esutil
 import healsparse
@@ -93,9 +93,8 @@ class SimpleHealpixMapper(object):
         nexp_map : `healsparse.HealSparseMap`
         """
         # Figure out coverage
-        ipnest = hp.ang2pix(self.config.nside_coverage,
-                            self.centers['ra_center'], self.centers['dec_center'],
-                            nest=True, lonlat=True)
+        ipnest = hpg.angle_to_pixel(self.config.nside_coverage,
+                                    self.centers['ra_center'], self.centers['dec_center'])
         pixels = np.unique(ipnest)
 
         # Initialize the map and memory
