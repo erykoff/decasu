@@ -1,0 +1,56 @@
+name: Python Package with Rubin Science Pipelines
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  HOME: /home/lsst
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        stack:
+          - lsstsqre/centos:7-stack-lsst_distrib-w_latest
+
+    container: ${{ matrix.stack }}
+
+    steps:
+    - name: Setup Environment
+      run: |
+        cd $HOME
+        echo "source /opt/lsst/software/stack/loadLSST.bash" >> .bashrc
+        echo "setup lsst_distrib" >> .bashrc
+        echo "cd $HOME" >> $HOME/.bashrc
+    - name: Install git
+      shell: bash -l {0}
+      run: |
+        gittest=`conda list git | grep git`
+        if [ -z "$gittest" ]; then
+            conda install -y git
+        fi
+    - name: Check out code
+      shell: bash -l {0}
+      run: |
+        git clone https://github.com/${GITHUB_REPOSITORY}
+        cd supreme
+        git fetch origin ${GITHUB_REF}:TESTING
+        git checkout TESTING
+        echo "cd ${PWD}" >> $HOME/.bashrc
+        echo "setup -j -r ." >> $HOME/.bashrc
+    - name: Lint with flake8
+      shell: bash -l {0}
+      run: |
+        # stop the build if it fails flake8 with default setup.cfg
+        flake8 . --count --show-source --statistics
+    - name: Test with pytest
+      shell: bash -l {0}
+      run: |
+        cd tests
+        pytest
