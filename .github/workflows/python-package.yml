@@ -28,13 +28,12 @@ jobs:
         export PATH="$CONDA/bin:$PATH"
         conda config --set always_yes yes --set changeps1 no
         conda update -q conda
-        conda install -q -n base mamba -c conda-forge
         conda info -a
         conda init bash
     - name: Install dependencies
       run: |
         export PATH="$CONDA/bin:$PATH"
-        sudo mamba create -q -n testenv python=${{ matrix.python-version }} numpy healpy astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
+        conda create -q -n testenv python=${{ matrix.python-version }} numpy healpy astropy healsparse fitsio esutil LSSTDESC.Coord pyyaml setuptools_scm setuptools_scm_git_archive flake8 pytest pytest-flake8 -c conda-forge
         source activate testenv
         pip install --no-deps .
     - name: Test with pytest
