@@ -1,0 +1,22 @@
+outbase: 'testing'
+use_lsst_db: True
+nside: 16384
+map_types:
+  nexp: ['sum']
+  exptime: ['sum']
+  airmass: ['wmean', 'min', 'max']
+use_two_amps: False
+arcsec_per_pix: 0.20
+zp_global: 27.0
+exp_field: "observationID"
+ccd_field: "detector"
+band_field: "filter"
+mjd_field: "mjd"
+bad_amps: {}
+bad_ccds: []
+extra_fields: {}
+latitude: -30.244633333333333
+longitude: -70.74941666666666
+elevation: 2647.0
+border: 0.0
+lsst_db_additional_selection: "observationStartMJD > 61758.10 and observationStartMJD < 62443.341"

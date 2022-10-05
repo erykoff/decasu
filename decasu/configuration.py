@@ -50,6 +50,8 @@ class Configuration(object):
     ncore: int = 1
     extra_fields: Dict[str, str] = field(default_factory=_default_extra_fields)
     band_replacement: Dict[str, str] = field(default_factory=_default_band_replacement)
+    use_lsst_db: bool = False
+    lsst_db_additional_selection: str = ""
     border: int = 15
     amp_boundary: int = 1024
     use_two_amps: bool = True
@@ -79,7 +81,11 @@ class Configuration(object):
         self._validate()
 
     def _validate(self):
-        pass
+        if self.use_lsst_db:
+            try:
+                import lsst.obs.lsst  # noqa: F401
+            except ImportError:
+                raise RuntimeError("Cannot use lsst db without Rubin Science Pipelines setup.")
 
     @classmethod
     def load_yaml(cls, configfile):

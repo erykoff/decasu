@@ -467,13 +467,24 @@ class RegionMapper(object):
                                      self.config.border])
 
                 if self.config.use_two_amps:
-                    ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
-                    ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
+                    if self.config.use_lsst_db:
+                        ra_a, dec_a = wcs.pixelToSkyArray(x_coords_a.astype(np.float64),
+                                                          y_coords.astype(np.float64),
+                                                          degrees=True)
+                        ra_b, dec_b = wcs.pixelToSkyArray(x_coords_b, y_coords, degrees=True)
+                    else:
+                        ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
+                        ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
 
                     poly_a = healsparse.Polygon(ra=ra_a, dec=dec_a, value=[bit_a])
                     poly_b = healsparse.Polygon(ra=ra_b, dec=dec_b, value=[bit_b])
                 else:
-                    ra, dec = wcs.image2sky(x_coords, y_coords)
+                    if self.config.use_lsst_db:
+                        ra, dec = wcs.pixelToSkyArray(x_coords.astype(np.float64),
+                                                      y_coords.astype(np.float64),
+                                                      degrees=True)
+                    else:
+                        ra, dec = wcs.image2sky(x_coords, y_coords)
 
                     poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
             else:

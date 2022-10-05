@@ -1,2 +1,7 @@
+setupOptional(obs_lsst)
+setupOptional(obs_base)
+setupOptional(afw)
+setupOptional(geom)
+
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/)
 envPrepend(PATH, ${PRODUCT_DIR}/scripts)

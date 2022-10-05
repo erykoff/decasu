@@ -110,7 +110,9 @@ class WcsTableBuilder(object):
         -------
         wcs : `esutil.wcsutil.WCS`
         pixels : `list`
-           List of nside = `config.nside_run` intersecting pixels
+           List of nside = `config.nside_run` intersecting pixels.
+           Returned if compute_pixels is True in initialization.
+        center : `tuple` [`float`]
         """
         if (row % 10000) == 0:
             print("Working on WCS index %d" % (row))
