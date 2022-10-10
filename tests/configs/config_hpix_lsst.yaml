@@ -22,3 +22,4 @@ border: 0.0
 mjd_min: 61758.10
 mjd_max: 62443.341
 lsst_db_additional_selection: ""
+time_bin: 0

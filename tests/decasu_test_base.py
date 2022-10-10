@@ -20,24 +20,31 @@ class DecasuTestBase(unittest.TestCase):
             if os.path.exists(self.test_dir):
                 shutil.rmtree(self.test_dir, True)
 
-    def check_expected_maps_tile(self, expected_dict, tilename, band):
+    def check_expected_maps_tile(self, expected_dict, tilename, band, time_bin=-1):
         """
         Check for expected maps, ranges, types for a tilename.
 
         Parameters
         ----------
         expected_dict : `OrderedDict`
-           Ordered dictionary with keys of map names, values of [min, max].
-           The first item must be the tile input with [nccd, width_expected].
+            Ordered dictionary with keys of map names, values of [min, max].
+            The first item must be the tile input with [nccd, width_expected].
         tilename : `str`
-           Name of tile
+            Name of tile
         band : `str`
-           Band name
+            Band name
+        time_bin : `int`, optional
+            Bin of time to be processing.
         """
+        if time_bin < 0:
+            outbase = 'testing'
+        else:
+            outbase = 'testing-%d' % (time_bin)
+
         mod_times = []
         for em in expected_dict:
-            map_name = os.path.join(self.test_dir, tilename, 'testing_%s_%s_%s.hs'
-                                    % (tilename, band, em))
+            map_name = os.path.join(self.test_dir, tilename, '%s_%s_%s_%s.hsp'
+                                    % (outbase, tilename, band, em))
             self.assertTrue(os.path.isfile(map_name))
             mod_times.append(os.path.getmtime(map_name))
             m = healsparse.HealSparseMap.read(map_name)
@@ -105,12 +112,12 @@ class DecasuTestBase(unittest.TestCase):
         """
         # Read in the mangle map
         mangle_map = healsparse.HealSparseMap.read(os.path.join(ROOT, 'data',
-                                                                '%s_%s.hs' %
+                                                                '%s_%s.hsp' %
                                                                 (manglebase, mapstr)))
         nside_mangle = mangle_map.nside_sparse
 
         decasu_map = healsparse.HealSparseMap.read(os.path.join(self.test_dir,
-                                                                'testing_%s_%s_%s.hs' %
+                                                                'testing_%s_%s_%s.hsp' %
                                                                 (band, mapstr, opstr)))
         decasu_map_dg = decasu_map.degrade(nside_mangle)
 
@@ -141,29 +148,36 @@ class DecasuTestBase(unittest.TestCase):
 
         self.assertLess(outliers.size/gd.size, max_outlier_frac)
 
-    def check_expected_maps_hpix(self, expected_dict, nside, hpix, band, check_amp=False):
+    def check_expected_maps_hpix(self, expected_dict, nside, hpix, band, check_amp=False, time_bin=-1):
         """
         Check for expected maps, ranges, types for a tilename.
 
         Parameters
         ----------
         expected_dict : `OrderedDict`
-           Ordered dictionary with keys of map names, values of [min, max].
-           The first item must be the tile input with [nccd, width_expected].
+            Ordered dictionary with keys of map names, values of [min, max].
+            The first item must be the tile input with [nccd, width_expected].
         nside : `int`
-           Healpix nside
+            Healpix nside
         hpix : `int`
-           Healpixel number
+            Healpixel number
         band : `str`
-           Band name
+            Band name
         check_amp : `bool`, optional
-           Check that the amplifier is set
+            Check that the amplifier is set
+        time_bin : `int`, optional
+            Bin of time to be processing.
         """
+        if time_bin < 0:
+            outbase = 'testing'
+        else:
+            outbase = 'testing-%d' % (time_bin)
+
         mod_times = []
         for em in expected_dict:
             subdir = '%d_%05d' % (nside, hpix)
-            map_name = os.path.join(self.test_dir, subdir, 'testing_%d_%05d_%s_%s.hs'
-                                    % (nside, hpix, band, em))
+            map_name = os.path.join(self.test_dir, subdir, '%s_%d_%05d_%s_%s.hsp'
+                                    % (outbase, nside, hpix, band, em))
             self.assertTrue(os.path.isfile(map_name))
             mod_times.append(os.path.getmtime(map_name))
             m = healsparse.HealSparseMap.read(map_name)
@@ -206,22 +220,29 @@ class DecasuTestBase(unittest.TestCase):
 
         return mod_times
 
-    def check_expected_maps_consolidated(self, expected_dict, band):
+    def check_expected_maps_consolidated(self, expected_dict, band, time_bin=-1):
         """
         Check for expected consolidated maps, ranges, types.
 
         Parameters
         ----------
         expected_dict : `OrderedDict`
-           Ordered dictionary with keys of map names, values of [min, max].
+            Ordered dictionary with keys of map names, values of [min, max].
         band : `str`
-           Band name
+            Band name
+        time_bin : `int`, optional
+            Bin of time to be processing.
         """
+        if time_bin < 0:
+            outbase = 'testing'
+        else:
+            outbase = 'testing-%d' % (time_bin)
+
         mod_times = []
         first_valid_pixels = None
         for em in expected_dict:
-            map_name = os.path.join(self.test_dir, 'testing_%s_%s.hs'
-                                    % (band, em))
+            map_name = os.path.join(self.test_dir, '%s_%s_%s.hsp'
+                                    % (outbase, band, em))
             self.assertTrue(os.path.isfile(map_name))
             mod_times.append(os.path.getmtime(map_name))
             m = healsparse.HealSparseMap.read(map_name)

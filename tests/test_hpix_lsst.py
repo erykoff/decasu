@@ -50,7 +50,7 @@ class HpixLSSTTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['exptime_sum'] = [29.0, 61.0, 'float64']
         expected_dict['nexp_sum'] = [0, 3, 'int32']
 
-        self.check_expected_maps_hpix(expected_dict, 8, 549, 'r')
+        self.check_expected_maps_hpix(expected_dict, 8, 549, 'r', time_bin=0)
 
         # Look at consolidated map
         expected_dict = OrderedDict()
@@ -60,7 +60,7 @@ class HpixLSSTTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['exptime_sum'] = [29.0, 61.0, 'float64']
         expected_dict['nexp_sum'] = [0, 3, 'int32']
 
-        self.check_expected_maps_consolidated(expected_dict, 'r')
+        self.check_expected_maps_consolidated(expected_dict, 'r', time_bin=0)
 
 
 if __name__ == '__main__':
