@@ -53,6 +53,9 @@ class LsstWcsDbBuilder:
         if len(bands) > 0:
             where_string = where_string + " and filter in (" + ",".join([f"'{band}'" for band in bands]) + ")"
 
+        where_string = where_string + f" and observationStartMJD >= {self.config.mjd_min}"
+        where_string = where_string + f" and observationStartMJD <= {self.config.mjd_max}"
+
         query_string = query_string + where_string + ";"
 
         res = cur.execute(query_string)

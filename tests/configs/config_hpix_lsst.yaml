@@ -19,4 +19,6 @@ latitude: -30.244633333333333
 longitude: -70.74941666666666
 elevation: 2647.0
 border: 0.0
-lsst_db_additional_selection: "observationStartMJD > 61758.10 and observationStartMJD < 62443.341"
+mjd_min: 61758.10
+mjd_max: 62443.341
+lsst_db_additional_selection: ""

@@ -75,6 +75,11 @@ class WcsTableBuilder(object):
                         use |= (table[self.config.band_field] == b)
                 table = table[use]
 
+            # Cut to the MJD range.
+            use = ((table[self.config.mjd_field] >= self.config.mjd_min) &
+                   (table[self.config.mjd_field] <= self.config.mjd_max))
+            table = table[use]
+
             if self.config.zp_sign_swap:
                 table[self.config.magzp_field] *= -1.0
 
