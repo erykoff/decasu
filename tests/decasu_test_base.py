@@ -171,7 +171,7 @@ class DecasuTestBase(unittest.TestCase):
         if time_bin < 0:
             outbase = 'testing'
         else:
-            outbase = 'testing-%d' % (time_bin)
+            outbase = 'testing-%03d' % (time_bin)
 
         mod_times = []
         for em in expected_dict:
@@ -236,7 +236,7 @@ class DecasuTestBase(unittest.TestCase):
         if time_bin < 0:
             outbase = 'testing'
         else:
-            outbase = 'testing-%d' % (time_bin)
+            outbase = 'testing-%03d' % (time_bin)
 
         mod_times = []
         first_valid_pixels = None
