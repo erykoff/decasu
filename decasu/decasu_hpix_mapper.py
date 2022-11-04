@@ -41,7 +41,7 @@ def main():
 
     if args.simple:
         mapper = SimpleHealpixMapper(config)
-        mapper(args.infile, 'blah.hs', bands[0])
+        mapper(args.infile, 'blah.hsp', bands[0])
     else:
         mapper = MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
         mapper(args.infile, bands=bands, pixels=pixels,

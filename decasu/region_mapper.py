@@ -368,9 +368,11 @@ class RegionMapper(object):
                     m.write(fname, clobber=clobber)
 
         if self.tilemode:
-            print("...finished maps for tile %s in %.2f s." % (tilename, time.time() - start_time))
+            print("...finished maps for tile %s (%d inputs) in %.2f s." %
+                  (tilename, len(indices), time.time() - start_time))
         else:
-            print("...finished maps for pixel %d in %.2f s." % (hpix, time.time() - start_time))
+            print("...finished maps for pixel %d (%d inputs) in %.2f s." %
+                  (hpix, len(indices), time.time() - start_time))
 
     def build_region_input_map(self, indices, tilename=None, hpix=None):
         """

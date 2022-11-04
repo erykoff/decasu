@@ -302,4 +302,4 @@ class Configuration(object):
         if self.time_bin < 0:
             return self.outbase
         else:
-            return '%s-%d' % (self.outbase, self.time_bin)
+            return '%s-%03d' % (self.outbase, self.time_bin)

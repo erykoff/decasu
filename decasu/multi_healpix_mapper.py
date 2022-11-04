@@ -57,6 +57,10 @@ class MultiHealpixMapper(object):
         else:
             wcs_builder = WcsTableBuilder(self.config, [infile], bands)
 
+        if len(decasu_globals.table) == 0:
+            print('No observations in specified ranges.')
+            return
+
         print('Generating WCSs...')
         t = time.time()
         mp_ctx = multiprocessing.get_context("fork")
