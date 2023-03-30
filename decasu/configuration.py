@@ -50,6 +50,9 @@ class Configuration(object):
     ncore: int = 1
     extra_fields: Dict[str, str] = field(default_factory=_default_extra_fields)
     band_replacement: Dict[str, str] = field(default_factory=_default_band_replacement)
+    use_lsst_db: bool = False
+    lsst_db_additional_selection: str = ""
+    time_bin: int = -1
     border: int = 15
     amp_boundary: int = 1024
     use_two_amps: bool = True
@@ -73,13 +76,19 @@ class Configuration(object):
     longitude: float = -70.8063
     elevation: float = 2200.0
     satstar_maxrad: float = 400.0
+    mjd_min: float = 0.0
+    mjd_max: float = 1e20
     argminmax_field: str = ''
 
     def __post_init__(self):
         self._validate()
 
     def _validate(self):
-        pass
+        if self.use_lsst_db:
+            try:
+                import lsst.obs.lsst  # noqa: F401
+            except ImportError:
+                raise RuntimeError("Cannot use lsst db without Rubin Science Pipelines setup.")
 
     @classmethod
     def load_yaml(cls, configfile):
@@ -147,12 +156,12 @@ class Configuration(object):
         -------
         filename : `str`
         """
-        return "%s_%d_%05d_%s_%s_%s.hs" % (self.outbase,
-                                           self.nside_run,
-                                           hpix,
-                                           band,
-                                           map_type,
-                                           op_code_to_str(operation))
+        return "%s_%d_%05d_%s_%s_%s.hsp" % (self.outbase_augmented,
+                                            self.nside_run,
+                                            hpix,
+                                            band,
+                                            map_type,
+                                            op_code_to_str(operation))
 
     def tile_map_filename(self, band, tilename, map_type, operation):
         """
@@ -173,11 +182,11 @@ class Configuration(object):
         -------
         filename : `str`
         """
-        return "%s_%s_%s_%s_%s.hs" % (self.outbase,
-                                      tilename,
-                                      band,
-                                      map_type,
-                                      op_code_to_str(operation))
+        return "%s_%s_%s_%s_%s.hsp" % (self.outbase_augmented,
+                                       tilename,
+                                       band,
+                                       map_type,
+                                       op_code_to_str(operation))
 
     def healpix_map_filename_template(self, band, map_type, operation):
         """
@@ -198,11 +207,11 @@ class Configuration(object):
         -------
         template : `str`
         """
-        return "%s_%d_?????_%s_%s_%s.hs" % (self.outbase,
-                                            self.nside_run,
-                                            band,
-                                            map_type,
-                                            op_code_to_str(operation))
+        return "%s_%d_?????_%s_%s_%s.hsp" % (self.outbase_augmented,
+                                             self.nside_run,
+                                             band,
+                                             map_type,
+                                             op_code_to_str(operation))
 
     def tile_map_filename_template(self, band, map_type, operation):
         """
@@ -223,7 +232,7 @@ class Configuration(object):
         -------
         template : `str`
         """
-        return "%s_%s_%s_%s_%s.hs" % (self.outbase,
+        return "%s_%s_%s_%s_%s.hs" % (self.outbase_augmented,
                                       '?'*12,
                                       band,
                                       map_type,
@@ -242,10 +251,10 @@ class Configuration(object):
         -------
         Filename for the input map.
         """
-        return "%s_%d_%05d_%s_inputs.hs" % (self.outbase,
-                                            self.nside_run,
-                                            hpix,
-                                            band)
+        return "%s_%d_%05d_%s_inputs.hsp" % (self.outbase_augmented,
+                                             self.nside_run,
+                                             hpix,
+                                             band)
 
     def tile_input_filename(self, band, tilename):
         """
@@ -260,9 +269,9 @@ class Configuration(object):
         -------
         Filename for the input map.
         """
-        return "%s_%s_%s_inputs.hs" % (self.outbase,
-                                       tilename,
-                                       band)
+        return "%s_%s_%s_inputs.hsp" % (self.outbase_augmented,
+                                        tilename,
+                                        band)
 
     def map_filename(self, band, map_type, operation):
         """
@@ -283,7 +292,14 @@ class Configuration(object):
         -------
         filename : `str`
         """
-        return "%s_%s_%s_%s.hs" % (self.outbase,
-                                   band,
-                                   map_type,
-                                   op_code_to_str(operation))
+        return "%s_%s_%s_%s.hsp" % (self.outbase_augmented,
+                                    band,
+                                    map_type,
+                                    op_code_to_str(operation))
+
+    @property
+    def outbase_augmented(self):
+        if self.time_bin < 0:
+            return self.outbase
+        else:
+            return '%s-%03d' % (self.outbase, self.time_bin)

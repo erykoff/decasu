@@ -1,5 +1,5 @@
 numpy>=1.16.0
-healpy
+hpgeom
 astropy
 healsparse
 fitsio>=1.0.5
@@ -8,3 +8,4 @@ LSSTDESC.Coord
 pyyaml>=5.0
 setuptools_scm
 setuptools_scm_git_archive
+sqlite3

@@ -6,6 +6,7 @@ import esutil
 import glob
 
 from .wcs_table import WcsTableBuilder
+from .lsst_wcs_db import LsstWcsDbBuilder
 from .region_mapper import RegionMapper
 from .healpix_consolidator import HealpixConsolidator
 from .utils import op_str_to_code
@@ -51,7 +52,14 @@ class MultiHealpixMapper(object):
         """
         # First build the wcs's
         print('Reading input table...')
-        wcs_builder = WcsTableBuilder(self.config, [infile], bands)
+        if self.config.use_lsst_db:
+            wcs_builder = LsstWcsDbBuilder(self.config, infile, bands)
+        else:
+            wcs_builder = WcsTableBuilder(self.config, [infile], bands)
+
+        if len(decasu_globals.table) == 0:
+            print('No observations in specified ranges.')
+            return
 
         print('Generating WCSs...')
         t = time.time()

@@ -4,7 +4,7 @@ import multiprocessing
 import time
 import esutil
 import fitsio
-import healpy as hp
+import hpgeom as hpg
 import healsparse
 
 from .wcs_table import WcsTableBuilder
@@ -279,7 +279,7 @@ class MultiTileMapper(object):
 
         tile_area = delta_ra*delta_dec*np.cos(np.deg2rad((row['udecmin'] + row['udecmax'])/2.))
         nside_coverage_tile = 32
-        while hp.nside2pixarea(nside_coverage_tile, degrees=True) > tile_area:
+        while hpg.nside_to_pixel_area(nside_coverage_tile) > tile_area:
             nside_coverage_tile = int(2*nside_coverage_tile)
         nside_coverage_tile = int(nside_coverage_tile / 2)
 

@@ -13,11 +13,11 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 class HpixHscTestCase(decasu_test_base.DecasuTestBase):
     """
-    Tests for running a healpixels using the HSC code.
+    Tests for running healpixels using the HSC code.
     """
     def test_hpix_hsc(self):
         """
-        Test a several hpixels
+        Test several hpixels
         """
         band = 'r'
 

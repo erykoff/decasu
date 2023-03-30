@@ -1,5 +1,5 @@
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 import fitsio
 import esutil
 
@@ -75,6 +75,11 @@ class WcsTableBuilder(object):
                         use |= (table[self.config.band_field] == b)
                 table = table[use]
 
+            # Cut to the MJD range.
+            use = ((table[self.config.mjd_field] >= self.config.mjd_min) &
+                   (table[self.config.mjd_field] <= self.config.mjd_max))
+            table = table[use]
+
             if self.config.zp_sign_swap:
                 table[self.config.magzp_field] *= -1.0
 
@@ -110,7 +115,9 @@ class WcsTableBuilder(object):
         -------
         wcs : `esutil.wcsutil.WCS`
         pixels : `list`
-           List of nside = `config.nside_run` intersecting pixels
+           List of nside = `config.nside_run` intersecting pixels.
+           Returned if compute_pixels is True in initialization.
+        center : `tuple` [`float`]
         """
         if (row % 10000) == 0:
             print("Working on WCS index %d" % (row))
@@ -136,9 +143,8 @@ class WcsTableBuilder(object):
             center = [np.mean(ra_co), np.mean(dec_co)]
 
         if self.compute_pixels:
-            vertices = hp.ang2vec(ra_co, dec_co, lonlat=True)
             try:
-                pixels = hp.query_polygon(self.config.nside_run, vertices, nest=True, inclusive=True, fact=16)
+                pixels = hpg.query_polygon(self.config.nside_run, ra_co, dec_co, inclusive=True, fact=16)
             except RuntimeError:
                 # Bad WCS
                 pixels = np.array([], dtype=np.int64)

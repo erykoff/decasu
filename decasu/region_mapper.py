@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import healsparse
-import healpy as hp
+import hpgeom as hpg
 import esutil
 import time
 
@@ -368,9 +368,11 @@ class RegionMapper(object):
                     m.write(fname, clobber=clobber)
 
         if self.tilemode:
-            print("...finished maps for tile %s in %.2f s." % (tilename, time.time() - start_time))
+            print("...finished maps for tile %s (%d inputs) in %.2f s." %
+                  (tilename, len(indices), time.time() - start_time))
         else:
-            print("...finished maps for pixel %d in %.2f s." % (hpix, time.time() - start_time))
+            print("...finished maps for pixel %d (%d inputs) in %.2f s." %
+                  (hpix, len(indices), time.time() - start_time))
 
     def build_region_input_map(self, indices, tilename=None, hpix=None):
         """
@@ -467,13 +469,24 @@ class RegionMapper(object):
                                      self.config.border])
 
                 if self.config.use_two_amps:
-                    ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
-                    ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
+                    if self.config.use_lsst_db:
+                        ra_a, dec_a = wcs.pixelToSkyArray(x_coords_a.astype(np.float64),
+                                                          y_coords.astype(np.float64),
+                                                          degrees=True)
+                        ra_b, dec_b = wcs.pixelToSkyArray(x_coords_b, y_coords, degrees=True)
+                    else:
+                        ra_a, dec_a = wcs.image2sky(x_coords_a, y_coords)
+                        ra_b, dec_b = wcs.image2sky(x_coords_b, y_coords)
 
                     poly_a = healsparse.Polygon(ra=ra_a, dec=dec_a, value=[bit_a])
                     poly_b = healsparse.Polygon(ra=ra_b, dec=dec_b, value=[bit_b])
                 else:
-                    ra, dec = wcs.image2sky(x_coords, y_coords)
+                    if self.config.use_lsst_db:
+                        ra, dec = wcs.pixelToSkyArray(x_coords.astype(np.float64),
+                                                      y_coords.astype(np.float64),
+                                                      degrees=True)
+                    else:
+                        ra, dec = wcs.image2sky(x_coords, y_coords)
 
                     poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
             else:
@@ -562,7 +575,7 @@ class RegionMapper(object):
             if tilename is not None and self.config.use_two_amps:
                 tind, = np.where(dg.tile_info['tilename'] == tilename)
                 for pixels, bit in zip([pixels_a, pixels_b], [bit_a, bit_b]):
-                    pixra, pixdec = hp.pix2ang(self.config.nside, pixels, lonlat=True, nest=True)
+                    pixra, pixdec = hpg.pixel_to_angle(self.config.nside, pixels)
                     if dg.tile_info['crossra0'][tind] == 'Y':
                         # Special for cross-ra0, where uramin will be very large
                         uramin = dg.tile_info['uramin'][tind] - 360.0

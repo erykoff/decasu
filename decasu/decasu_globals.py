@@ -6,3 +6,4 @@ tile_info = None
 streak_table = None
 bleed_table = None
 satstar_table = None
+lsst_camera = None

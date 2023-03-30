@@ -11,7 +11,7 @@ def main():
     parser.add_argument('-c', '--configfile', action='store', type=str, required=True,
                         help='YAML config file')
     parser.add_argument('-i', '--infile', action='store', type=str, required=True,
-                        help='Input fits file')
+                        help='Input fits or database file')
     parser.add_argument('-b', '--bands', action='store', type=str, required=False,
                         help='Bands to generate map for, comma delimited')
     parser.add_argument('-n', '--ncores', action='store', type=int, required=False,
@@ -41,7 +41,7 @@ def main():
 
     if args.simple:
         mapper = SimpleHealpixMapper(config)
-        mapper(args.infile, 'blah.hs', bands[0])
+        mapper(args.infile, 'blah.hsp', bands[0])
     else:
         mapper = MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
         mapper(args.infile, bands=bands, pixels=pixels,
