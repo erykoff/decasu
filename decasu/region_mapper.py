@@ -4,6 +4,7 @@ import healsparse
 import hpgeom as hpg
 import esutil
 import time
+from functools import lru_cache
 
 import coord
 
@@ -555,6 +556,7 @@ class RegionMapper(object):
                     pixels = poly.get_pixels(nside=self.config.nside)
 
             # Check for bad amps -- only in two amp mode
+            mask_pixel_arrays = []
             if self.config.use_two_amps:
                 if int(dg.table[self.config.ccd_field][ind]) in list(self.config.bad_amps):
                     ba = self.config.bad_amps[int(dg.table[self.config.ccd_field][ind])]
@@ -563,6 +565,21 @@ class RegionMapper(object):
                             pixels_a = np.array([], dtype=np.int64)
                         elif b.lower() == 'b':
                             pixels_b = np.array([], dtype=np.int64)
+            elif self.config.mask_lsstcam_bad_amps:
+                det = int(dg.table[self.config.ccd_field][ind])
+                if det in list(self.config.bad_amps):
+                    ba = self.config.bad_amps[det]
+                    for b in ba:
+                        x_coords, y_coords = _get_numpy_corners_from_detector(
+                            dg.lsst_camera[det],
+                            b,
+                        )
+                        ra, dec = wcs.pixelToSkyArray(x_coords.astype(np.float64),
+                                                      y_coords.astype(np.float64),
+                                                      degrees=True)
+                        maskpoly = healsparse.Polygon(ra=ra, dec=dec, value=1)
+
+                        mask_pixel_arrays.append(maskpoly.get_pixels(nside=self.config.nside))
 
             if int(dg.table[self.config.ccd_field][ind]) in self.config.bad_ccds:
                 if self.config.use_two_amps:
@@ -606,6 +623,10 @@ class RegionMapper(object):
                 else:
                     ok = ((pixels >= pixel_min) & (pixels <= pixel_max))
                     region_input_map.set_bits_pix(pixels[ok], [bit])
+
+            if len(mask_pixel_arrays) > 0:
+                mask_pixels = np.concatenate(mask_pixel_arrays)
+                region_input_map.clear_bits_pix(mask_pixels, [bit])
 
         region_input_map.metadata = metadata
 
@@ -762,3 +783,19 @@ class RegionMapper(object):
                                        radius=table_row['radius']/3600.,
                                        value=1)
         return maskcircle
+
+
+@lru_cache(maxsize=200)
+def _get_numpy_corners_from_detector(detector, amp_name):
+    bbox = detector[amp_name].getBBox()
+
+    x_coords = np.array([bbox.getBeginX(),
+                         bbox.getBeginX(),
+                         bbox.getEndX(),
+                         bbox.getEndX()])
+    y_coords = np.array([bbox.getBeginY(),
+                         bbox.getEndY(),
+                         bbox.getEndY(),
+                         bbox.getBeginY()])
+
+    return x_coords, y_coords
