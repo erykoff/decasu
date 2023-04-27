@@ -6,13 +6,14 @@ map_types:
   exptime: ['sum']
   airmass: ['wmean', 'min', 'max']
 use_two_amps: False
+mask_lsstcam_bad_amps: True
 arcsec_per_pix: 0.20
 zp_global: 27.0
 exp_field: "observationID"
 ccd_field: "detector"
 band_field: "filter"
 mjd_field: "mjd"
-bad_amps: {}
+bad_amps: {110: ["C10", "C11"]}
 bad_ccds: []
 extra_fields: {}
 latitude: -30.244633333333333

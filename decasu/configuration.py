@@ -56,6 +56,7 @@ class Configuration(object):
     border: int = 15
     amp_boundary: int = 1024
     use_two_amps: bool = True
+    mask_lsstcam_bad_amps: bool = False
     use_wcs: bool = True
     ra_corner_fields: List[str] = field(default_factory=_default_ra_corner_fields)
     dec_corner_fields: List[str] = field(default_factory=_default_dec_corner_fields)
@@ -89,6 +90,9 @@ class Configuration(object):
                 import lsst.obs.lsst  # noqa: F401
             except ImportError:
                 raise RuntimeError("Cannot use lsst db without Rubin Science Pipelines setup.")
+
+        if self.use_two_amps and self.mask_lsstcam_bad_amps:
+            raise RuntimeError("Cannot set both use_two_amps and mask_lsstcam_bad_amps.")
 
     @classmethod
     def load_yaml(cls, configfile):

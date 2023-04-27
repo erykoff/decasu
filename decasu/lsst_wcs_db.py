@@ -172,7 +172,6 @@ class LsstWcsDbBuilder:
 
         # Link to global table.
         self.table = decasu_globals.table
-        # self.camera = decasu_globals.lsst_camera
 
         detector = decasu_globals.lsst_camera[self.table['detector'][row]]
 
