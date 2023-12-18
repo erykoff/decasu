@@ -16,3 +16,6 @@ map_types:
   skybrite: ['wmean', 'wmean-scaled', 'min-scaled', 'max-scaled', 'mean', 'mean-scaled']
   skyvar: ['wmean', 'min']
   fwhm: ['wmean']
+  mjd: ['wmean']
+  fraction_of_year: ['wmean']
+  fraction_of_day: ['wmean']

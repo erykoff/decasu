@@ -5,6 +5,7 @@ import hpgeom as hpg
 import esutil
 import time
 from functools import lru_cache
+from astropy.time import Time
 
 import coord
 
@@ -281,6 +282,12 @@ class RegionMapper(object):
                     value = (np.tan(zenith)**2.)*np.sin(2*par_angle)
                 elif map_type == 'parallactic':
                     value = par_angle
+                elif map_type == 'mjd':
+                    value = dg.table[self.config.mjd_field][ind]
+                elif map_type == 'fraction_of_year':
+                    value = self._compute_fraction_of_year(dg.table[self.config.mjd_field][ind])
+                elif map_type == 'fraction_of_day':
+                    value = self._compute_fraction_of_day(dg.table[self.config.mjd_field][ind])
                 else:
                     value = dg.table[map_type][ind]
 
@@ -783,6 +790,38 @@ class RegionMapper(object):
                                        radius=table_row['radius']/3600.,
                                        value=1)
         return maskcircle
+
+    def _compute_fraction_of_year(self, mjds):
+        """Compute day of year.
+
+        Parameters
+        ----------
+        mjd : `np.ndarray`
+            Array of MJD values.
+
+        Returns
+        -------
+        fraction_of_year : `np.ndarray`
+            Fraction of year for MJDs.
+        """
+        t = Time(mjds, format='mjd')
+        decimal_year = t.to_value('decimalyear')
+        return decimal_year - np.floor(decimal_year)
+
+    def _compute_fraction_of_day(self, mjds):
+        """Compute fraction of day.
+
+        Parameters
+        ----------
+        mjd : `np.ndarray`
+            Array of MJD values.
+
+        Returns
+        -------
+        fraction_of_day : `np.ndarray`
+            Fraction of day (UTC) for MJDs.
+        """
+        return mjds - np.floor(mjds)
 
 
 @lru_cache(maxsize=200)
