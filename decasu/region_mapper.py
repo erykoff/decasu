@@ -499,10 +499,21 @@ class RegionMapper(object):
                     poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
             else:
                 # Don't use the WCS and use the bounding box specified in the table.
-                # This is only possible with 1-amp mode.
-                ra = np.array([dg.table[field][ind] for field in self.config.ra_corner_fields])
-                dec = np.array([dg.table[field][ind] for field in self.config.dec_corner_fields])
-                poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
+                # This is only possible with DECam 1-amp mode or consdb.
+                if "s_region" in dg.table.dtype.names:
+                    import lsst.sphgeom
+
+                    region = lsst.sphgeom.Region.from_ivoa_pos(
+                        "".join(dg.table["s_region"][ind].split("ICRS")).upper(),
+                    )
+                    verts = [lsst.sphgeom.LonLat(vert) for vert in region.getVertices()]
+                    ra = np.asarray([v.getLon().asDegrees() for v in verts])
+                    dec = np.asarray([v.getLat().asDegrees() for v in verts])
+                    poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
+                else:
+                    ra = np.array([dg.table[field][ind] for field in self.config.ra_corner_fields])
+                    dec = np.array([dg.table[field][ind] for field in self.config.dec_corner_fields])
+                    poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
 
             # Check if we have additional masking
             if (dg.streak_table is not None or dg.bleed_table is not None or
