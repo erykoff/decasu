@@ -17,7 +17,7 @@ except ImportError:
 
 class LsstWcsDbBuilder:
     """
-    Build a WCS table from an LSST database and get intersecting pixels.
+    Build a WCS table from an LSST OpSim database and get intersecting pixels.
 
     Parameters
     ----------
