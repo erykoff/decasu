@@ -61,7 +61,7 @@ class RegionMapper(object):
         clobber : `bool`, optional
            Clobber any existing files.
         """
-        self.band = dg.table[self.config.band_field][indices[0]]
+        band = dg.table[self.config.band_field][indices[0]]
 
         start_time = time.time()
         if self.tilemode:
@@ -76,7 +76,7 @@ class RegionMapper(object):
             # Check if this exists and read or build
             input_map_filename = os.path.join(self.outputpath,
                                               self.config.tile_relpath(tilename),
-                                              self.config.tile_input_filename(self.band,
+                                              self.config.tile_input_filename(band,
                                                                               tilename))
             if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
@@ -85,7 +85,7 @@ class RegionMapper(object):
                 input_map.write(input_map_filename, clobber=clobber)
         else:
             hpix = hpix_or_tilename
-            print("Computing maps for pixel %d with %d inputs" % (hpix, len(indices)))
+            print("Computing maps for pixel %d (%s) with %d inputs" % (hpix, band, len(indices)))
 
             # Create the path for the files if necessary
             os.makedirs(os.path.join(self.outputpath,
@@ -95,7 +95,7 @@ class RegionMapper(object):
             # Check if this exists and read or build
             input_map_filename = os.path.join(self.outputpath,
                                               self.config.healpix_relpath(hpix),
-                                              self.config.healpix_input_filename(self.band,
+                                              self.config.healpix_input_filename(band,
                                                                                  hpix))
             if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
@@ -140,14 +140,14 @@ class RegionMapper(object):
                 if self.tilemode:
                     fname = os.path.join(self.outputpath,
                                          self.config.tile_relpath(tilename),
-                                         self.config.tile_map_filename(self.band,
+                                         self.config.tile_map_filename(band,
                                                                        tilename,
                                                                        map_type,
                                                                        op_code))
                 else:
                     fname = os.path.join(self.outputpath,
                                          self.config.healpix_relpath(hpix),
-                                         self.config.healpix_map_filename(self.band,
+                                         self.config.healpix_map_filename(band,
                                                                           hpix,
                                                                           map_type,
                                                                           op_code))
