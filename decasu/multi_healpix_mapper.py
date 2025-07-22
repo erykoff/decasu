@@ -6,7 +6,8 @@ import esutil
 import glob
 
 from .wcs_table import WcsTableBuilder
-from .lsst_wcs_db import LsstWcsDbBuilder, LsstWcsConsDbBuilder
+from .lsst_wcs_db import LsstWcsDbBuilder
+from .lsst_wcs_consdb import LsstWcsConsDbBuilder
 from .region_mapper import RegionMapper
 from .healpix_consolidator import HealpixConsolidator
 from .utils import op_str_to_code
