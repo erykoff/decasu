@@ -46,7 +46,7 @@ class LsstWcsConsDbBuilder:
             "cv.detector, cv.visit_id, cv.s_region, "
             "v.band, v.exp_time, v.exp_midpt_mjd, v.sky_rotation "
             "FROM cdb_LSSTCam.ccdvisit1_quicklook as cvq, cdb_LSSTCam.ccdvisit1 as cv, "
-            "cdb_LSSTCam.visit1 as v"
+            "cdb_LSSTCam.visit1 as v "
         )
         where_string = (
             "WHERE cvq.ccdvisit_id=cv.ccdvisit_id and "
