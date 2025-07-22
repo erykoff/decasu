@@ -128,7 +128,7 @@ class LsstWcsConsDbBuilder:
 
         Returns
         -------
-        wcs : `None`
+        wcs : `int`
             Placeholder.
         pixels : `list`
             List of nside = `config.nside_run` intersecting pixels.
@@ -153,6 +153,6 @@ class LsstWcsConsDbBuilder:
         if self.compute_pixels:
             vertices = np.asarray([[v.x(), v.y(), v.z()] for v in region.getVertices()])
             pixels = hpg.query_polygon_vec(self.config.nside_run, vertices, inclusive=True, fact=16)
-            return None, pixels, center
+            return 0, pixels, center
         else:
-            return None, center
+            return 0, center
