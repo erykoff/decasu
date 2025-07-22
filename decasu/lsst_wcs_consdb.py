@@ -141,12 +141,14 @@ class LsstWcsConsDbBuilder:
         # Link to global table.
         self.table = decasu_globals.table
 
-        region = lsst.sphgeom.Region.from_ivoa_pos("".join(row["s_region"].split("ICRS")).upper())
+        region_str = self.table["s_region"][row]
+
+        region = lsst.sphgeom.Region.from_ivoa_pos("".join(region_str.split("ICRS")).upper())
         centroid = lsst.sphgeom.LonLat(region.getCentroid())
         center = [centroid.getLon().asDegrees(), centroid.getLat().asDegrees()]
 
-        row["ra_center"] = center[0]
-        row["dec_center"] = center[1]
+        self.table["ra_center"][row] = center[0]
+        self.table["dec_center"][row] = center[1]
 
         if self.compute_pixels:
             vertices = np.asarray([[v.x(), v.y(), v.z()] for v in region.getVertices()])
