@@ -28,8 +28,8 @@ classifiers = [
 ]
 
 [project.scripts]
-decasu_hpix_mapper.py = "decasu.decasu_hpix_mapper:main"
-decasu_tile_mapper.py = "decasu.decasu_tile_mapper:main"
+"decasu_hpix_mapper.py" = "decasu.decasu_hpix_mapper:main"
+"decasu_tile_mapper.py" = "decasu.decasu_tile_mapper:main"
 
 [project.urls]
 home = "https://github.com/erykoff/decasu"
