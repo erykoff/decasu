@@ -1,0 +1,55 @@
+[build-system]
+requires = [
+    "setuptools>=46",
+    "wheel",
+    "setuptools_scm>=7",
+    "tomli>=1.0.0; python_version < '3.11'",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decasu"
+authors = [
+    {name = "Eli Rykoff", email = "erykoff@stanford.edu"},
+    {name = "others"},
+]
+description = "DECam (and HSC and LSST) Survey Property Maps using healsparse"
+dynamic = ["version", "dependencies"]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">= 3.10"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+[project.scripts]
+decasu_hpix_mapper.py = "decasu.decasu_hpix_mapper:main"
+decasu_tile_mapper.py = "decasu.decasu_tile_mapper:main"
+
+[project.urls]
+home = "https://github.com/erykoff/decasu"
+
+[tool.setuptools]
+zip-safe = true
+packages = {find = {exclude=["tests*"]}}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
+write_to = "decasu/_version.py"
+write_to_template = "__version__ = '{version}'\n"
+
+[tool.flake8]
+max-line-length = 110
+ignore = ["E133", "E226", "E228", "N802", "N803", "N806", "N812", "N815", "N816", "W504"]
+exclude = [
+  "**/__init__.py",
+  "docs",
+  "build",
+]
