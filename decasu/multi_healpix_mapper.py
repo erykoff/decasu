@@ -14,7 +14,7 @@ from .utils import op_str_to_code
 from . import decasu_globals
 
 
-class MultiHealpixMapper(object):
+class MultiHealpixMapper:
     """
     Map a combination of bands/pixels
 

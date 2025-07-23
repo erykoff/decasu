@@ -35,9 +35,9 @@ def _default_dec_corner_fields():
 
 
 @dataclass
-class Configuration(object):
+class Configuration:
     """
-    Decasu configuration object.
+    Decasu configuration class.
     """
     # Mandatory fields
     outbase: str

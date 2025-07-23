@@ -10,7 +10,7 @@ from astropy.coordinates import EarthLocation
 from . import decasu_globals
 
 
-class WcsTableBuilder(object):
+class WcsTableBuilder:
     """
     Build a WCS table and get intersecting pixels
 

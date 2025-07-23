@@ -21,7 +21,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OMP_NUM_THREADS'] = '1'
 
 
-class RegionMapper(object):
+class RegionMapper:
     """
     Map a single region (healpix pixel or tile)
 

@@ -2,7 +2,7 @@ import os
 import healsparse
 
 
-class HealpixConsolidator(object):
+class HealpixConsolidator:
     """
     Consolidate several maps into one.
 
