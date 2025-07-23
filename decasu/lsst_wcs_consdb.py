@@ -97,8 +97,6 @@ class LsstWcsConsDbBuilder:
         print(f"Found {len(db_table)} detector visits for {len(self.bands)} bands.")
 
         # Add extra columns.
-        db_table["ra_center"] = np.zeros(len(db_table))
-        db_table["dec_center"] = np.zeros(len(db_table))
         db_table["decasu_lst"] = np.zeros(len(db_table))
         db_table["skyvar"] = db_table["sky_noise"]**2.
 
@@ -146,9 +144,6 @@ class LsstWcsConsDbBuilder:
         region = lsst.sphgeom.Region.from_ivoa_pos("".join(region_str.split("ICRS")).upper())
         centroid = lsst.sphgeom.LonLat(region.getCentroid())
         center = [centroid.getLon().asDegrees(), centroid.getLat().asDegrees()]
-
-        self.table["ra_center"][row] = center[0]
-        self.table["dec_center"][row] = center[1]
 
         if self.compute_pixels:
             vertices = np.asarray([[v.x(), v.y(), v.z()] for v in region.getVertices()])
