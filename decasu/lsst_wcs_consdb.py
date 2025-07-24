@@ -103,7 +103,7 @@ class LsstWcsConsDbBuilder:
         # Units of electrons.
         db_table["skyvar"] = db_table["sky_noise"]**2.
         # Units of arcsec.
-        db_table[config.fwhm_field] = 2.355*config.argsec_per_pix*db_table["psf_sigma"]
+        db_table[config.fwhm_field] = 2.355*config.arcsec_per_pix*db_table["psf_sigma"]
 
         print("Computing local sidereal time...")
         loc = EarthLocation(lat=config.latitude*units.degree,
