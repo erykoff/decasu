@@ -187,7 +187,7 @@ def compute_visit_iqr_and_optics_scale(config, table):
         i1a = rev[rev[ind]: rev[ind + 1]]
         isfinite = np.isfinite(table[config.fwhm_field][i1a]) & (table[config.fwhm_field][i1a] > 0.0)
         if np.any(isfinite):
-            five, lo, hi = np.percentile(table[config.fwhm_field][i1a][isfinite], [5.0, 25.0, 75.0])
-            table[f"{config.fwhm_field}_iqr"][i1a][isfinite] = hi - lo
+            five, lo, hi = np.percentile(table[config.fwhm_field][i1a[isfinite]], [5.0, 25.0, 75.0])
+            table[f"{config.fwhm_field}_iqr"][i1a[isfinite]] = hi - lo
 
             table[f"{config.fwhm_field}_optics_scale"][i1a] = table[f"{config.fwhm_field}"][i1a] / five
