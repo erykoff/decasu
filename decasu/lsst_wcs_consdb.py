@@ -7,6 +7,7 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation
 
 from . import decasu_globals
+from .utils import compute_visit_iqr_and_optics_scale
 
 try:
     import lsst.obs.lsst
@@ -97,8 +98,12 @@ class LsstWcsConsDbBuilder:
         print(f"Found {len(db_table)} detector visits for {len(self.bands)} bands.")
 
         # Add extra columns.
+        # Units of degrees.
         db_table["decasu_lst"] = np.zeros(len(db_table))
+        # Units of electrons.
         db_table["skyvar"] = db_table["sky_noise"]**2.
+        # Units of arcsec.
+        db_table[config.fwhm_field] = 2.355*config.argsec_per_pix*db_table["psf_sigma"]
 
         print("Computing local sidereal time...")
         loc = EarthLocation(lat=config.latitude*units.degree,
@@ -107,7 +112,14 @@ class LsstWcsConsDbBuilder:
 
         t = Time(db_table[config.mjd_field], format="mjd", location=loc)
         lst = t.sidereal_time("apparent")
-        db_table["decasu_lst"] = lst.to_value(units.degree)
+        db_table["decasu_lst"][:] = lst.to_value(units.degree)
+
+        # Compute a couple of additional psf quantities.
+        db_table[f"{config.fwhm_field}_iqr"] = np.zeros(len(db_table))
+        db_table[f"{config.fwhm_field}_optics_scale"] = np.zeros(len(db_table))
+
+        print('Computing fwhm scaled properties...')
+        compute_visit_iqr_and_optics_scale(self.config, db_table)
 
         instrument = lsst.obs.lsst.LsstCam()
         camera = instrument.getCamera()

@@ -72,6 +72,7 @@ class Configuration:
     band_field: str = 'band'
     mjd_field: str = 'mjd_obs'
     skyvar_field: str = 'skyvar'
+    fwhm_field: str = 'fwhm'
     bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
     bad_ccds: List[int] = field(default_factory=_default_bad_ccds)
     latitude: float = -30.1690
