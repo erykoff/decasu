@@ -70,6 +70,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['mjd_wmean'] = [56602.0, 57335.0, 'float64']
         expected_dict['fraction_of_year_wmean'] = [0.67, 0.94, 'float64']
         expected_dict['fraction_of_day_wmean'] = [0.03, 0.23, 'float64']
+        expected_dict['fwhm_iqr_wmean'] = [-0.01, 0.3, 'float64']
+        expected_dict['fwhm_optics_scale_wmean'] = [0.95, 1.2, 'float64']
 
         self.check_expected_maps_tile(expected_dict, 'DES0003-5457', band)
 
@@ -103,6 +105,8 @@ class TilenameTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['mjd_wmean'] = [56602.0, 57259.0, 'float64']
         expected_dict['fraction_of_year_wmean'] = [0.63, 0.94, 'float64']
         expected_dict['fraction_of_day_wmean'] = [0.05, 0.28, 'float64']
+        expected_dict['fwhm_iqr_wmean'] = [-0.01, 0.3, 'float64']
+        expected_dict['fwhm_optics_scale_wmean'] = [0.95, 1.15, 'float64']
 
         self.check_expected_maps_tile(expected_dict, 'DES2358-5457', band)
 
