@@ -18,7 +18,7 @@ def main():
                         default=1, help='Number of cores to run on.')
     parser.add_argument('-o', '--outputpath', action='store', type=str, required=True,
                         help='Output path')
-    parser.add_argument('-b', '--outputbase', action='store', type=str, required=False,
+    parser.add_argument('-B', '--outputbase', action='store', type=str, required=False,
                         help='Output filename base; will replace outbase in config.')
     parser.add_argument('-p', '--pixels', action='store', type=str, required=False,
                         help='Pixels to run on, comma delimited')
