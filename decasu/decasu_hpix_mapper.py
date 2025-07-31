@@ -28,6 +28,8 @@ def main():
                         required=False, help='Keep intermediate files')
     parser.add_argument('-q', '--query', required=False,
                         help='Additional query string; will replace lsst_db_additional_selection config.')
+    parser.add_argument('-m', '--make_map_images', action='store_true', required=False,
+                        help='Automatically make skyproj map images?')
 
     args = parser.parse_args()
 
@@ -55,4 +57,5 @@ def main():
     else:
         mapper = MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
         mapper(args.infile, bands=bands, pixels=pixels,
-               clear_intermediate_files=not args.keep_intermediate_files)
+               clear_intermediate_files=not args.keep_intermediate_files,
+               make_map_images=args.make_map_images)

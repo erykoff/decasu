@@ -39,7 +39,8 @@ class HpixLSSTTestCase(decasu_test_base.DecasuTestBase):
 
         mapper = decasu.MultiHealpixMapper(config, self.test_dir, ncores=1)
         mapper(dbfile, bands=[band],
-               clear_intermediate_files=False)
+               clear_intermediate_files=False,
+               make_map_images=True)
 
         # Look at 549
         expected_dict = OrderedDict()
@@ -60,7 +61,7 @@ class HpixLSSTTestCase(decasu_test_base.DecasuTestBase):
         expected_dict['exptime_sum'] = [29.0, 61.0, 'float64']
         expected_dict['nexp_sum'] = [0, 3, 'int32']
 
-        self.check_expected_maps_consolidated(expected_dict, 'r', time_bin=0)
+        self.check_expected_maps_consolidated(expected_dict, 'r', time_bin=0, images=True)
 
 
 if __name__ == '__main__':
