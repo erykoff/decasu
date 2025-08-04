@@ -7,13 +7,14 @@ import glob
 
 from .wcs_table import WcsTableBuilder
 from .lsst_wcs_db import LsstWcsDbBuilder
+from .lsst_wcs_consdb import LsstWcsConsDbBuilder
 from .region_mapper import RegionMapper
 from .healpix_consolidator import HealpixConsolidator
 from .utils import op_str_to_code
 from . import decasu_globals
 
 
-class MultiHealpixMapper(object):
+class MultiHealpixMapper:
     """
     Map a combination of bands/pixels
 
@@ -34,26 +35,30 @@ class MultiHealpixMapper(object):
         if not os.path.isdir(outputpath):
             raise RuntimeError("Outputpath %s does not exist." % (outputpath))
 
-    def __call__(self, infile, bands=[], pixels=[], clear_intermediate_files=True):
+    def __call__(self, infile, bands=[], pixels=[], clear_intermediate_files=True, make_map_images=False):
         """
         Compute maps for a combination of bands/pixels
 
         Parameters
         ----------
         infile : `str`
-           Name of input file with wcs and map information
+            Name of input file with wcs and map information
         bands : `list`, optional
-           List of bands to run.  If blank, run all.
+            List of bands to run.  If blank, run all.
         pixels : `list`, optional
-           List of pixels to run (nside=`config.nside_run`).
-           If blank, run all.
+            List of pixels to run (nside=`config.nside_run`).
+            If blank, run all.
         clear_intermediate_files : `bool`, optional
-           Clear intermediate files when done?
+            Clear intermediate files when done?
+        make_map_images : `bool`, optional
+            Make map images?
         """
         # First build the wcs's
         print('Reading input table...')
         if self.config.use_lsst_db:
             wcs_builder = LsstWcsDbBuilder(self.config, infile, bands)
+        elif self.config.use_lsst_consdb:
+            wcs_builder = LsstWcsConsDbBuilder(self.config, infile, bands)
         else:
             wcs_builder = WcsTableBuilder(self.config, [infile], bands)
 
@@ -122,6 +127,7 @@ class MultiHealpixMapper(object):
         print('Consolidating maps...')
         fname_list = []
         mapfiles_list = []
+        descr_list = []
         for map_type in self.config.map_types.keys():
             for operation in self.config.map_types[map_type]:
                 op_code = op_str_to_code(operation)
@@ -144,10 +150,15 @@ class MultiHealpixMapper(object):
                                                              fname_template)))
                     fname_list.append(fname)
                     mapfiles_list.append(mapfiles)
+                    descr_list.append(f'{band}_{map_type}_{operation}')
 
-        hpix_consolidator = HealpixConsolidator(self.config, clear_intermediate_files)
+        hpix_consolidator = HealpixConsolidator(
+            self.config,
+            clear_intermediate_files,
+            make_map_images=make_map_images,
+        )
 
-        values = zip(fname_list, mapfiles_list)
+        values = zip(fname_list, mapfiles_list, descr_list)
 
         t = time.time()
         mp_ctx = multiprocessing.get_context("fork")

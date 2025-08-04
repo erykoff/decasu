@@ -35,9 +35,9 @@ def _default_dec_corner_fields():
 
 
 @dataclass
-class Configuration(object):
+class Configuration:
     """
-    Decasu configuration object.
+    Decasu configuration class.
     """
     # Mandatory fields
     outbase: str
@@ -51,6 +51,7 @@ class Configuration(object):
     extra_fields: Dict[str, str] = field(default_factory=_default_extra_fields)
     band_replacement: Dict[str, str] = field(default_factory=_default_band_replacement)
     use_lsst_db: bool = False
+    use_lsst_consdb: bool = False
     lsst_db_additional_selection: str = ""
     time_bin: int = -1
     border: int = 15
@@ -71,6 +72,7 @@ class Configuration(object):
     band_field: str = 'band'
     mjd_field: str = 'mjd_obs'
     skyvar_field: str = 'skyvar'
+    fwhm_field: str = 'fwhm'
     bad_amps: Dict[int, list] = field(default_factory=_default_bad_amps)
     bad_ccds: List[int] = field(default_factory=_default_bad_ccds)
     latitude: float = -30.1690
@@ -85,11 +87,13 @@ class Configuration(object):
         self._validate()
 
     def _validate(self):
-        if self.use_lsst_db:
+        if self.use_lsst_db or self.use_lsst_consdb:
             try:
                 import lsst.obs.lsst  # noqa: F401
             except ImportError:
                 raise RuntimeError("Cannot use lsst db without Rubin Science Pipelines setup.")
+        if self.use_lsst_db and self.use_lsst_consdb:
+            raise RuntimeError("Cannot set both use_lsst_db and lsst_use_consdb.")
 
         if self.use_two_amps and self.mask_lsstcam_bad_amps:
             raise RuntimeError("Cannot set both use_two_amps and mask_lsstcam_bad_amps.")

@@ -13,7 +13,7 @@ from .utils import op_str_to_code, read_maskfiles
 from . import decasu_globals
 
 
-class MultiTileMapper(object):
+class MultiTileMapper:
     """
     Map a combination of tiles for a single band.
 

@@ -19,3 +19,5 @@ map_types:
   mjd: ['wmean']
   fraction_of_year: ['wmean']
   fraction_of_day: ['wmean']
+  fwhm_iqr: ['wmean']
+  fwhm_optics_scale: ['wmean']

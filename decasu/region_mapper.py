@@ -21,7 +21,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OMP_NUM_THREADS'] = '1'
 
 
-class RegionMapper(object):
+class RegionMapper:
     """
     Map a single region (healpix pixel or tile)
 
@@ -61,7 +61,7 @@ class RegionMapper(object):
         clobber : `bool`, optional
            Clobber any existing files.
         """
-        self.band = dg.table[self.config.band_field][indices[0]]
+        band = dg.table[self.config.band_field][indices[0]]
 
         start_time = time.time()
         if self.tilemode:
@@ -76,7 +76,7 @@ class RegionMapper(object):
             # Check if this exists and read or build
             input_map_filename = os.path.join(self.outputpath,
                                               self.config.tile_relpath(tilename),
-                                              self.config.tile_input_filename(self.band,
+                                              self.config.tile_input_filename(band,
                                                                               tilename))
             if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
@@ -85,7 +85,7 @@ class RegionMapper(object):
                 input_map.write(input_map_filename, clobber=clobber)
         else:
             hpix = hpix_or_tilename
-            print("Computing maps for pixel %d with %d inputs" % (hpix, len(indices)))
+            print("Computing maps for pixel %d (%s) with %d inputs" % (hpix, band, len(indices)))
 
             # Create the path for the files if necessary
             os.makedirs(os.path.join(self.outputpath,
@@ -95,7 +95,7 @@ class RegionMapper(object):
             # Check if this exists and read or build
             input_map_filename = os.path.join(self.outputpath,
                                               self.config.healpix_relpath(hpix),
-                                              self.config.healpix_input_filename(self.band,
+                                              self.config.healpix_input_filename(band,
                                                                                  hpix))
             if os.path.isfile(input_map_filename) and not clobber:
                 input_map = healsparse.HealSparseMap.read(input_map_filename)
@@ -140,14 +140,14 @@ class RegionMapper(object):
                 if self.tilemode:
                     fname = os.path.join(self.outputpath,
                                          self.config.tile_relpath(tilename),
-                                         self.config.tile_map_filename(self.band,
+                                         self.config.tile_map_filename(band,
                                                                        tilename,
                                                                        map_type,
                                                                        op_code))
                 else:
                     fname = os.path.join(self.outputpath,
                                          self.config.healpix_relpath(hpix),
-                                         self.config.healpix_map_filename(self.band,
+                                         self.config.healpix_map_filename(band,
                                                                           hpix,
                                                                           map_type,
                                                                           op_code))
@@ -499,10 +499,21 @@ class RegionMapper(object):
                     poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
             else:
                 # Don't use the WCS and use the bounding box specified in the table.
-                # This is only possible with 1-amp mode.
-                ra = np.array([dg.table[field][ind] for field in self.config.ra_corner_fields])
-                dec = np.array([dg.table[field][ind] for field in self.config.dec_corner_fields])
-                poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
+                # This is only possible with DECam 1-amp mode or consdb.
+                if "s_region" in dg.table.dtype.names:
+                    import lsst.sphgeom
+
+                    region = lsst.sphgeom.Region.from_ivoa_pos(
+                        "".join(dg.table["s_region"][ind].split("ICRS")).upper(),
+                    )
+                    verts = [lsst.sphgeom.LonLat(vert) for vert in region.getVertices()]
+                    ra = np.asarray([v.getLon().asDegrees() for v in verts])
+                    dec = np.asarray([v.getLat().asDegrees() for v in verts])
+                    poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
+                else:
+                    ra = np.array([dg.table[field][ind] for field in self.config.ra_corner_fields])
+                    dec = np.array([dg.table[field][ind] for field in self.config.dec_corner_fields])
+                    poly = healsparse.Polygon(ra=ra, dec=dec, value=[bit])
 
             # Check if we have additional masking
             if (dg.streak_table is not None or dg.bleed_table is not None or

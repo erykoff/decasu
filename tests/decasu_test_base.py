@@ -220,7 +220,7 @@ class DecasuTestBase(unittest.TestCase):
 
         return mod_times
 
-    def check_expected_maps_consolidated(self, expected_dict, band, time_bin=-1):
+    def check_expected_maps_consolidated(self, expected_dict, band, time_bin=-1, images=False):
         """
         Check for expected consolidated maps, ranges, types.
 
@@ -232,6 +232,8 @@ class DecasuTestBase(unittest.TestCase):
             Band name
         time_bin : `int`, optional
             Bin of time to be processing.
+        images : `bool`, optional
+            Check for images?
         """
         if time_bin < 0:
             outbase = 'testing'
@@ -262,5 +264,10 @@ class DecasuTestBase(unittest.TestCase):
                                expected_dict[em][0])
             self.assertLess(np.max(m[valid_pixels]),
                             expected_dict[em][1])
+
+            if images:
+                image_name = os.path.join(self.test_dir, '%s_%s_%s_skyproj.png'
+                                          % (outbase, band, em))
+                self.assertTrue(os.path.isfile(image_name))
 
         return mod_times

@@ -8,9 +8,10 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation
 
 from . import decasu_globals
+from .utils import compute_visit_iqr_and_optics_scale
 
 
-class WcsTableBuilder(object):
+class WcsTableBuilder:
     """
     Build a WCS table and get intersecting pixels
 
@@ -48,6 +49,8 @@ class WcsTableBuilder(object):
 
             # And add in the hour angle and parallactic angle fields
             dtype.extend([('decasu_lst', 'f8')])
+            dtype.extend([(f'{config.fwhm_field}_iqr', 'f4')])
+            dtype.extend([(f'{config.fwhm_field}_optics_scale', 'f4')])
 
             table = np.zeros(table_in.size, dtype=dtype)
             for name in table_in.dtype.names:
@@ -89,6 +92,9 @@ class WcsTableBuilder(object):
                 fulltable = np.append(fulltable, table)
 
         print('Found %d CCDs for %d bands.' % (len(fulltable), len(bands)))
+
+        print('Computing fwhm scaled properties...')
+        compute_visit_iqr_and_optics_scale(self.config, fulltable)
 
         print('Computing local sidereal time...')
         loc = EarthLocation(lat=config.latitude*units.degree,
