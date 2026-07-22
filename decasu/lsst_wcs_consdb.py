@@ -52,7 +52,7 @@ class LsstWcsConsDbBuilder:
         where_string = (
             "WHERE cvq.ccdvisit_id=cv.ccdvisit_id and "
             "cv.visit_id=v.visit_id and "
-            "detector<189 and cvq.zero_point is not null "
+            "cv.detector<189 and cvq.zero_point is not null "
         )
 
         if len(self.config.lsst_db_additional_selection) > 0:
