@@ -1,4 +1,5 @@
 import argparse
+from astropy.table import Table
 
 from .configuration import Configuration
 from .simple_healpix_mapper import SimpleHealpixMapper
@@ -30,6 +31,8 @@ def main():
                         help='Additional query string; will replace lsst_db_additional_selection config.')
     parser.add_argument('-m', '--make_map_images', action='store_true', required=False,
                         help='Automatically make skyproj map images?')
+    parser.add_argument('-x', '--exclude_visit_file', action='store', type=str, required=False,
+                        help='Filename of an astropy ecsv table with visit_ids to exclude.')
 
     args = parser.parse_args()
 
@@ -51,11 +54,19 @@ def main():
     else:
         pixels = [int(p) for p in args.pixels.split(',')]
 
+    if args.exclude_visit_file:
+        if args.simple:
+            raise NotImplementedError('Exclusion list not implemented for simple mapper')
+        exclude_ids = Table.read(args.exclude_visit_file, format="ecsv")
+        assert('visit_id') in exclude_ids.columns 
+    else: 
+        exclude_ids = []
+
     if args.simple:
         mapper = SimpleHealpixMapper(config)
         mapper(args.infile, 'blah.hsp', bands[0])
     else:
         mapper = MultiHealpixMapper(config, args.outputpath, ncores=args.ncores)
-        mapper(args.infile, bands=bands, pixels=pixels,
+        mapper(args.infile, bands=bands, pixels=pixels, exclude_ids=exclude_ids,
                clear_intermediate_files=not args.keep_intermediate_files,
                make_map_images=args.make_map_images)

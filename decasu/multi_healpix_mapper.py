@@ -35,7 +35,8 @@ class MultiHealpixMapper:
         if not os.path.isdir(outputpath):
             raise RuntimeError("Outputpath %s does not exist." % (outputpath))
 
-    def __call__(self, infile, bands=[], pixels=[], clear_intermediate_files=True, make_map_images=False):
+    def __call__(self, infile, bands=[], pixels=[], exclude_ids=[], clear_intermediate_files=True, 
+                 make_map_images=False):
         """
         Compute maps for a combination of bands/pixels
 
@@ -48,6 +49,8 @@ class MultiHealpixMapper:
         pixels : `list`, optional
             List of pixels to run (nside=`config.nside_run`).
             If blank, run all.
+        exclude_ids : `list`, optional
+            List of bad visit ids to drop.  If blank, use all. 
         clear_intermediate_files : `bool`, optional
             Clear intermediate files when done?
         make_map_images : `bool`, optional
@@ -80,6 +83,9 @@ class MultiHealpixMapper:
         # Copy into/out of globals
         decasu_globals.wcs_list = wcs_list
         table = decasu_globals.table
+
+        mask = ~np.isin(table['visit_id'], exclude_ids['visit_id'])
+        table = table[mask]
 
         # Split into pixels
         pixel_arr = np.concatenate(pixel_list)
